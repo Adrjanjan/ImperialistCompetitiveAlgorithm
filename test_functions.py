@@ -23,10 +23,10 @@ def ackley_func(vector: tf.Tensor):
     b = tf.constant(0.2, tf.float64)
     c = tf.constant(constants.two_pi, tf.float64)
     n = tf.dtypes.cast(tf.shape(vector), tf.float64)
-    sum1 = tf.foldl((lambda accumulator, x: accumulator + x * x), vector, constants.zero)
-    sum2 = tf.foldl((lambda accumulator, x: accumulator + tf.math.cos(c * x)), vector, constants.zero)
-    return -a * tf.math.exp(
-        -b * tf.math.sqrt(tf.math.divide(sum1, n)) - tf.math.exp(tf.math.divide(sum2, n))) + a + constants.e
+    sum1 = tf.reduce_sum(tf.square(vector))
+    sum2 = tf.reduce_sum(tf.math.cos(tf.multiply(c, vector)))
+    return -a * tf.math.exp(-b * tf.math.sqrt(tf.math.divide(sum1, n))) \
+           - tf.math.exp(tf.math.divide(sum2, n)) + a + constants.e
 
 
 # @tf.function
