@@ -34,7 +34,7 @@ class ICA:
         # @tf.function
         def stop_condition(index, *unused):
             # TODO think about stop condition where there is only one empire
-            return tf.greater(index, constants.int_zero)
+            return tf.greater_equal(index, constants.int_zero)
 
         # @tf.function
         def main_loop(index, empires, colonies, empires_numbers):
@@ -53,9 +53,10 @@ class ICA:
 
         self.start_benchmark()
         countries = self.initialize_countries()
-        empires, colonies, empires_index = self.create_empires(countries)
-        index_and_results = (tf.constant(self.max_iterations), empires, colonies, empires_index)
-        _, empires, _, _ = tf.while_loop(stop_condition, main_loop, index_and_results)
+        empires, colonies, empires_numbers = self.create_empires(countries)
+        # index_and_results =
+        _, empires, _, _ = tf.while_loop(stop_condition, main_loop,
+                                         (tf.constant(self.max_iterations), empires, colonies, empires_numbers))
         self.finish_benchmark()
         print(empires.numpy())
         print(colonies.numpy())
@@ -143,10 +144,10 @@ class ICA:
 
     # @tf.function
     def swap_strongest(self, empires, colonies, empires_numbers):
-        def condition(index, *unused):
-            return tf.less(index, self.num_of_imperialist)
+        def condition(_, checked_count, *unused):
+            return tf.less(checked_count, self.num_of_imperialist)
 
-        def body(current_empire_number, empires, colonies, empires_numbers):
+        def body(current_empire_number, checked_count, empires, colonies, empires_numbers):
             def swap():
                 current_empire = self.get_first_by_empire_number(current_empire_number, empires, empires_numbers)
                 current_colonies_power_with_index = self.get_all_by_empire_number(current_empire_number,
@@ -172,8 +173,24 @@ class ICA:
             current_colonies_power = self.get_all_by_empire_number(current_empire_number, colonies_power,
                                                                    empires_numbers)
             best_colony_power = tf.reduce_min(current_colonies_power)
-            swapped_empires, swapped_colonies = tf.cond(current_empire_power > best_colony_power, swap, do_nothing)
-            return tf.add(1, current_empire_number), swapped_empires, swapped_colonies, empires_numbers
+            empire_not_exists = self.is_empty(current_empire_power)
+            swapped_empires, swapped_colonies = tf.cond(
+                empire_not_exists,
+                do_nothing,
+                lambda: tf.cond(current_empire_power > best_colony_power,
+                                swap,
+                                do_nothing
+                                )
+            )
+
+            new_checked_count = tf.cond(
+                empire_not_exists,
+                lambda: checked_count,
+                lambda: tf.add(checked_count, 1),
+            )
+
+            return tf.add(1,
+                          current_empire_number), new_checked_count, swapped_empires, swapped_colonies, empires_numbers
 
         colonies_power = self.evaluate_countries_power(colonies)
         colonies_indexes = tf.cast(tf.range(colonies_power.shape[0])[:, None], tf.int32)
@@ -183,9 +200,10 @@ class ICA:
             axis=1
         )
         empires_power = self.evaluate_countries_power(empires)
-        _, new_empires, new_colonies, _ = tf.while_loop(condition, body,
-                                                        (constants.int_zero, empires, colonies, empires_numbers)
-                                                        )
+        _, _, new_empires, new_colonies, _ = tf.while_loop(condition, body,
+                                                           (constants.int_zero, constants.int_zero, empires, colonies,
+                                                            empires_numbers)
+                                                           )
         return new_empires, new_colonies, empires_numbers
 
     # @tf.function
@@ -291,17 +309,18 @@ class ICA:
                        outer_empire, new_empires, new_empires_numbers
 
             outer_empire = self.get_first_by_empire_number(outer_empire_number, empires, empires_numbers)
-            initial_params = (tf.add(1, outer_empire_number),
-                              outer_empire_number,
-                              outer_empire,
-                              empires,
-                              empires_numbers)
+            inner_initial_params = (tf.add(1, outer_empire_number),
+                                    outer_empire_number,
+                                    outer_empire,
+                                    empires,
+                                    empires_numbers)
             empire_with_current_number_exists = self.is_empty(outer_empire)
             _, _, _, new_empires, new_empires_numbers = tf.cond(
                 empire_with_current_number_exists,
-                lambda: initial_params,
-                lambda: tf.while_loop(inner_condition, inner_loop, initial_params)
+                lambda: inner_initial_params,
+                lambda: tf.while_loop(inner_condition, inner_loop, inner_initial_params)
             )
+
             new_checked_count = tf.cond(
                 empire_with_current_number_exists,
                 lambda: checked_count,
@@ -309,8 +328,8 @@ class ICA:
             )
             return tf.add(1, outer_empire_number), new_checked_count, new_empires, new_empires_numbers
 
-        _, new_empires, new_empires_numbers = tf.while_loop(outer_condition, outer_loop,
-                                                            (constants.int_zero, empires, empires_numbers))
+        outer_initial_params = (constants.int_zero, constants.int_zero, empires, empires_numbers)
+        _, _, new_empires, new_empires_numbers = tf.while_loop(outer_condition, outer_loop, outer_initial_params)
         return new_empires, colonies, new_empires_numbers
 
     def merge_empires(self, outer_number, inner_number, outer_empire, inner_empire, empires, empires_numbers):
@@ -338,13 +357,23 @@ class ICA:
             self.evaluation_time = timeit.default_timer() - self.timeit
             print("Evaluation time", self.evaluation_time)
 
-    @staticmethod
-    def get_all_by_empire_number(empire_number, tensor, empires_numbers):
-        return tf.boolean_mask(tf.squeeze(tensor), tf.equal(empire_number, empires_numbers))
+    def get_all_by_empire_number(self, empire_number, tensor, empires_numbers):
+        return tf.cond(
+            self.is_empty(tensor),
+            lambda: tensor,
+            lambda: tf.boolean_mask(tf.squeeze(tensor), tf.equal(empire_number, empires_numbers))
+        )
 
-    @staticmethod
-    def get_first_by_empire_number(empire_number, tensor, empires_numbers):
-        return tf.squeeze(tf.gather(tf.boolean_mask(tf.squeeze(tensor), tf.equal(empire_number, empires_numbers)), 0))
+    def get_first_by_empire_number(self, empire_number, tensor, empires_numbers):
+        result = tf.boolean_mask(tf.squeeze(tensor), tf.equal(empire_number, empires_numbers))
+        return tf.cond(
+            self.is_empty(tensor),
+            lambda: tensor,
+            lambda: tf.cond(self.is_empty(result),
+                            lambda: result,
+                            lambda: tf.squeeze(tf.gather(result, 0))
+                            )
+        )
 
     def delete_rows(self, tensor, index):
         return tf.boolean_mask(tensor,
