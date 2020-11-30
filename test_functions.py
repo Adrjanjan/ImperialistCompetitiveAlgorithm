@@ -60,6 +60,7 @@ def rosenbrock_func(vector: tf.Tensor):
 
 
 rastrigin = CostFunction(rastrigin_func, 100.0, -100.0, 10)
-ackley = CostFunction(ackley_func, 100.0, -100.0, 10)
+ackley = CostFunction(ackley_func, 10.0, -10.0, 2)
 schwefel = CostFunction(schwefel_func, 100.0, -100.0, 10)
 rosenbrock = CostFunction(rosenbrock_func, 100.0, -100.0, 10)
+square = CostFunction(lambda x: tf.reduce_sum(tf.square(x)), 100.0, -100.0, 2)
