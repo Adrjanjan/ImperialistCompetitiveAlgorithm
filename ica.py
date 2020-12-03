@@ -20,29 +20,31 @@ class ICA:
         self.num_of_imperialist = num_of_imperialist
         self.num_of_colonies = num_of_countries - num_of_imperialist
         self.max_iterations = max_iterations
-        self.deviation_assimilation = deviation_assimilation
-        self.direct_assimilation = direct_assimilation
-        self.avg_colonies_power = avg_colonies_power
-        self.revolution_rate = revolution_rate
-        self.close_empires_rating = close_empires_rating
+        self.deviation_assimilation = tf.constant(deviation_assimilation, dtype=tf.float64)
+        self.direct_assimilation = tf.constant(direct_assimilation, dtype=tf.float64)
+        self.avg_colonies_power = tf.constant(avg_colonies_power, dtype=tf.float64)
+        self.revolution_rate = tf.constant(revolution_rate, dtype=tf.float64)
+        self.close_empires_rating = tf.constant(close_empires_rating, dtype=tf.float64)
         self.is_loggable = log
         self.timeit = 0
         self.seed = seed
+        self.value_mean = tf.metrics.Mean()
 
-    # @tf.function
+    @tf.function
     def eval(self):
         # @tf.function
         def stop_condition(index, *unused):
             # TODO think about stop condition where there is only one empire
             return tf.greater_equal(index, constants.int_zero)
 
-        # @tf.function
+        @tf.function
         def main_loop(index, empires, colonies, empires_numbers):
             empires, colonies, empires_numbers = self.assimilation(empires, colonies, empires_numbers)
             empires, colonies, empires_numbers = self.revolution(empires, colonies, empires_numbers)
             empires, colonies, empires_numbers = self.swap_strongest(empires, colonies, empires_numbers)
             empires, colonies, empires_numbers = self.competition(empires, colonies, empires_numbers)
             empires, colonies, empires_numbers = self.merging_of_similar(empires, colonies, empires_numbers)
+            self.collect_data(empires, colonies, empires_numbers)
             return tf.subtract(index, 1), empires, colonies, empires_numbers
 
         # country is a row of matrix where each value is parameter of some cost function
@@ -57,40 +59,24 @@ class ICA:
         # index_and_results =
         _, empires, _, _ = tf.while_loop(stop_condition, main_loop,
                                          (tf.constant(self.max_iterations), empires, colonies, empires_numbers))
-        self.finish_benchmark()
-        print(empires.numpy())
-        print(colonies.numpy())
+        # tf.print(empires.numpy())
+        # tf.print(colonies.numpy())
         solution = empires[0]
+        self.finish_benchmark(solution)
         return solution
 
-    # @tf.function
+    @tf.function
     def initialize_countries(self):
-        return tf.Variable(
-            self.calculate_distribution((self.num_of_countries, self.dimension), self.lower, self.upper, self.seed)
-        )
+        return self.calculate_distribution((self.num_of_countries, self.dimension), self.lower, self.upper)
 
-    # @tf.function
+    @tf.function
     def create_empires(self, countries):
-        # @tf.function
-        def calculate_number_of_colonies(top_powers):
-            max_cost = tf.reduce_max(top_powers[:])
-            normalised_cost = tf.where(max_cost > 0, tf.subtract(tf.multiply(1.3, max_cost), top_powers),
-                                       tf.subtract(tf.multiply(0.7, max_cost), top_powers))
-            num_of_colonies_per_empire = tf.round(
-                tf.multiply(tf.truediv(normalised_cost, tf.reduce_sum(normalised_cost)), self.num_of_colonies))
-
-            def add_one_to_top_empire(n):
-                return tf.where(tf.less(tf.reduce_sum(num_of_colonies_per_empire), self.num_of_colonies),
-                                tf.concat([tf.reshape(tf.add(n[0], 1), 1), n[1:]], 0),
-                                n)
-
-            return tf.cast(add_one_to_top_empire(num_of_colonies_per_empire), tf.int32)
-
+        @tf.function
         def condition(index, *unused):
             return tf.greater_equal(index, constants.int_zero)
 
-        # @tf.function
-        def construct_empires(index, number_of_colonies, top_indexes, empires, empires_numbers):
+        @tf.function
+        def construct_empires(index, number_of_colonies, top_indexes, empires, empires_numbers, insert_index):
             current_num_of_colonies = tf.gather(number_of_colonies, index)
             current_empire_index = tf.gather(top_indexes, index)
             new_empire_matrix = tf.reshape(
@@ -99,30 +85,82 @@ class ICA:
             new_empire_indexes = tf.reshape(tf.tile([index], [current_num_of_colonies]),
                                             [current_num_of_colonies, 1])
 
-            concatenated_empires = tf.concat([empires, new_empire_matrix], 0)
-            concatenated_empires_numbers = tf.concat([empires_numbers, new_empire_indexes], 0)
+            concatenated_empires = self.insert_in_tensor_from_index(empires, new_empire_matrix,
+                                                                    insert_index, current_num_of_colonies)
+            concatenated_empires_numbers = self.insert_in_tensor_from_index(empires_numbers, new_empire_indexes,
+                                                                            insert_index, current_num_of_colonies)
+
             new_index = tf.subtract(index, 1)
-            return new_index, number_of_colonies, top_indexes, concatenated_empires, concatenated_empires_numbers
+            return new_index, number_of_colonies, top_indexes, concatenated_empires, concatenated_empires_numbers, \
+                   tf.add(insert_index, tf.size(new_empire_indexes))
 
         power = self.evaluate_countries_power(countries)
         # (-1)*power is important to get lowest power first - lower cost means bigger power
         top_powers, top_indexes = tf.nn.top_k(-power, self.num_of_imperialist)
         top_powers = tf.negative(top_powers)
+        number_of_colonies = self.calculate_number_of_colonies(top_powers)
+        temp_empires = tf.zeros((self.num_of_colonies, self.dimension), dtype=tf.float64)
+        temp_empires_numbers = tf.zeros((self.num_of_colonies, 1), tf.int32)
         iteration_initialization_params = (tf.constant(self.num_of_imperialist - 1),
-                                           calculate_number_of_colonies(top_powers),
-                                           tf.constant(top_indexes),
-                                           tf.zeros((0, self.dimension), tf.float64),
-                                           tf.zeros((0, 1), tf.int32),
+                                           number_of_colonies,
+                                           top_indexes,
+                                           temp_empires,
+                                           temp_empires_numbers,
+                                           tf.constant(0)
                                            )
 
-        _, _, _, empires, empires_numbers = tf.while_loop(condition, construct_empires, iteration_initialization_params)
+        _, _, _, empires, empires_numbers, _ = tf.while_loop(condition, construct_empires,
+                                                             iteration_initialization_params,
+                                                             shape_invariants=(
+                                                                 tf.TensorShape(None),
+                                                                 tf.TensorShape([None]),
+                                                                 tf.TensorShape([None]),
+                                                                 tf.TensorShape([None, self.dimension]),
+                                                                 tf.TensorShape([None, 1]),
+                                                                 tf.TensorShape(None)
+                                                             ))
         colonies = self.delete_rows(countries, top_indexes)
         return empires, colonies, tf.squeeze(empires_numbers)
 
-    # @tf.function
+    @tf.function
+    def insert_in_tensor_from_index(self, tensor, to_insert, index, insert_size):
+        end = tensor[(index + insert_size):]
+        result = tf.cond(tf.equal(index, constants.int_zero),
+                         lambda: tf.concat([to_insert, end], 0),
+                         lambda: tf.concat([tensor[0:index], to_insert, end], 0))
+        return result
+
+    @tf.function
+    def calculate_number_of_colonies(self, top_powers):
+        max_cost = tf.reduce_max(top_powers[:])
+        x1 = tf.constant(1.3, dtype=tf.float64)
+        x2 = tf.constant(0.7, dtype=tf.float64)
+        normalised_cost = tf.where(max_cost > 0, tf.subtract(tf.multiply(x1, max_cost), top_powers),
+                                   tf.subtract(tf.multiply(x2, max_cost), top_powers))
+        num_of_colonies_per_empire = tf.round(
+            tf.multiply(tf.truediv(normalised_cost, tf.reduce_sum(normalised_cost)), self.num_of_colonies))
+
+        return tf.cast(self.add_one_to_top_empire(num_of_colonies_per_empire), tf.int32)
+
+    @tf.function
+    def add_one_to_top_empire(self, n):
+        more = tf.greater(tf.reduce_sum(n), self.num_of_colonies)
+        less = tf.less(tf.reduce_sum(n), self.num_of_colonies)
+        return tf.cond(
+            less,
+            lambda: tf.concat([tf.expand_dims(tf.add(n[0], 1), 0), n[1:]], 0),
+            lambda: tf.cond(
+                more,
+                lambda: tf.concat([tf.expand_dims(tf.subtract(n[0], 1), 0), n[1:]], 0),
+                lambda: n
+            )
+
+        )
+
+    @tf.function
     def assimilation(self, empires, colonies, empires_numbers):
         difference = tf.subtract(empires, colonies)
-        uniform = self.calculate_distribution(colonies.shape,
+        uniform = self.calculate_distribution((self.num_of_colonies, self.dimension),
                                               constants.zero,
                                               tf.multiply(tf.abs(difference), self.direct_assimilation)
                                               )
@@ -133,38 +171,26 @@ class ICA:
         )
         return empires, new_colonies, empires_numbers
 
-    # @tf.function
+    @tf.function
     def revolution(self, empires, colonies, empires_numbers):
-        to_revolve = self.calculate_distribution(empires_numbers.shape, constants.zero, constants.one)
-        possible_new_positions = self.calculate_distribution(colonies.shape, self.lower, self.upper)
-        chance_to_revolve = self.broadcast_boolean_mask(tf.less(to_revolve, self.revolution_rate), colonies.shape)
+        to_revolve = self.calculate_distribution((self.num_of_colonies, 1), constants.zero, constants.one)
+        possible_new_positions = self.calculate_distribution((self.num_of_colonies, self.dimension), self.lower,
+                                                             self.upper)
+        chance_to_revolve = self.broadcast_boolean_mask(tf.less(to_revolve, self.revolution_rate),
+                                                        (self.num_of_colonies, self.dimension))
 
         new_colonies = tf.where(chance_to_revolve, possible_new_positions, colonies)
         return empires, new_colonies, empires_numbers
 
-    # @tf.function
+    @tf.function
     def swap_strongest(self, empires, colonies, empires_numbers):
-        def condition(_, checked_count, *unused):
-            return tf.less(checked_count, self.num_of_imperialist)
+        @tf.function
+        def condition(iterator, empires_numbers_to_check, *unused):
+            return tf.less(iterator, tf.size(empires_numbers_to_check))
 
-        def body(current_empire_number, checked_count, empires, colonies, empires_numbers):
-            def swap():
-                current_empire = self.get_first_by_empire_number(current_empire_number, empires, empires_numbers)
-                current_colonies_power_with_index = self.get_all_by_empire_number(current_empire_number,
-                                                                                  colonies_power_with_index,
-                                                                                  empires_numbers)
-                current_colonies_power = tf.reshape(tf.squeeze(current_colonies_power_with_index[:, :-1]), [-1])
-                current_colonies_index = tf.cast(current_colonies_power_with_index[:, -1], tf.int32)
-
-                _, best_colony_current_index = tf.nn.top_k(-current_colonies_power)
-                best_colony_real_index = tf.gather(current_colonies_index, best_colony_current_index)
-                best_colony = tf.gather(colonies, best_colony_real_index)
-
-                new_e = self.broadcastable_where(tf.equal(empires_numbers, current_empire_number), best_colony, empires)
-                new_c = self.broadcastable_where(tf.equal(colonies_indexes, best_colony_real_index), current_empire,
-                                                 colonies)
-                return new_e, new_c
-
+        @tf.function
+        def body(iterator, empires_numbers_to_check, empires, colonies, empires_numbers):
+            current_empire_number = tf.gather(empires_numbers_to_check, iterator)
             current_empire_power = self.get_first_by_empire_number(current_empire_number, empires_power,
                                                                    empires_numbers)
             current_colonies_power = self.get_all_by_empire_number(current_empire_number, colonies_power,
@@ -175,38 +201,58 @@ class ICA:
                 empire_not_exists,
                 lambda: (empires, colonies),
                 lambda: tf.cond(current_empire_power > best_colony_power,
-                                swap,
+                                lambda: self.swap(current_empire_number, colonies, colonies_indexes, empires,
+                                                  empires_numbers, colonies_power_with_index),
                                 lambda: (empires, colonies)
                                 )
             )
 
-            new_checked_count = tf.where(empire_not_exists, checked_count, tf.add(checked_count, 1))
-            next_empire_number = tf.add(1, current_empire_number)
-
-            return next_empire_number, new_checked_count, swapped_empires, swapped_colonies, empires_numbers
+            return tf.add(1, iterator), empires_numbers_to_check, swapped_empires, swapped_colonies, empires_numbers
 
         colonies_power = self.evaluate_countries_power(colonies)
         colonies_indexes = self.create_index_column(colonies_power)
         colonies_power_with_index = self.concatenate_colonies_power_and_index(colonies_indexes, colonies_power)
 
         empires_power = self.evaluate_countries_power(empires)
-        swap_initial_params = (constants.int_zero, constants.int_zero, empires, colonies, empires_numbers)
+        empires_numbers_to_check, _ = tf.unique(empires_numbers)
+        swap_initial_params = (constants.int_zero, empires_numbers_to_check, empires, colonies, empires_numbers)
 
         _, _, new_empires, new_colonies, _ = tf.while_loop(condition, body, swap_initial_params)
         return new_empires, new_colonies, empires_numbers
 
+    @tf.function
+    def swap(self, current_empire_number, colonies, colonies_indexes, empires, empires_numbers,
+             colonies_power_with_index):
+        current_empire = self.get_first_by_empire_number(current_empire_number, empires, empires_numbers)
+        current_colonies_power_with_index = self.get_all_by_empire_number(current_empire_number,
+                                                                          colonies_power_with_index,
+                                                                          empires_numbers)
+        current_colonies_power = tf.reshape(tf.squeeze(current_colonies_power_with_index[:, :-1]), [-1])
+        current_colonies_index = tf.cast(current_colonies_power_with_index[:, -1], tf.int32)
+
+        _, best_colony_current_index = tf.nn.top_k(-current_colonies_power)
+        best_colony_real_index = tf.gather(current_colonies_index, best_colony_current_index)
+        best_colony = tf.gather(colonies, best_colony_real_index)
+
+        new_e = self.broadcastable_where(tf.equal(empires_numbers, current_empire_number), best_colony, empires)
+        new_c = self.broadcastable_where(tf.equal(colonies_indexes, best_colony_real_index), current_empire,
+                                         colonies)
+        return new_e, new_c
+
     @staticmethod
+    @tf.function
     def create_index_column(tensor):
         return tf.cast(tf.range(tensor.shape[0])[:, None], tf.int32)
 
+    @tf.function
     def concatenate_colonies_power_and_index(self, colonies_indexes, colonies_power):
         return tf.concat(
             [tf.reshape(colonies_power, [self.num_of_colonies, 1]),
-             tf.cast(colonies_indexes, tf.float64)],
+             tf.cast(colonies_indexes, dtype=tf.float64)],
             axis=1
         )
 
-    # @tf.function
+    @tf.function
     def competition(self, empires, colonies, empires_numbers):
         # calculate total power
         total_power = self.calculate_empire_total_power(empires, colonies, empires_numbers)
@@ -229,8 +275,9 @@ class ICA:
         self.check_number_of_imperialist(new_empires_numbers, worst_empire_number)
         return new_empires, colonies, new_empires_numbers
 
+    @tf.function
     def select_worst_colony_index(self, empire_index, colonies, empires_indexes):
-        colonies_with_index = tf.concat([colonies, tf.cast(tf.range(colonies.shape[0])[:, None], tf.float64)],
+        colonies_with_index = tf.concat([colonies, tf.cast(tf.range(self.num_of_colonies)[:, None], dtype=tf.float64)],
                                         axis=1)
         current_empire_colonies_with_index = self.get_all_by_empire_number(empire_index, colonies_with_index,
                                                                            empires_indexes)
@@ -242,17 +289,21 @@ class ICA:
         worst_colony_index = tf.gather(current_empire_colonies_index, current_worst_index)
         return worst_colony_index
 
+    @tf.function
     def select_top_empire(self, empires, empires_numbers, total_power):
-        distribution = self.calculate_distribution(total_power.shape, constants.zero, total_power)
+        distribution = self.calculate_distribution((self.num_of_colonies,), constants.zero, total_power)
         _, top_empire_index = tf.nn.top_k(tf.subtract(total_power, distribution))
         top_empire = tf.gather(empires, top_empire_index)
         top_empire_number = tf.gather(empires_numbers, top_empire_index)
         return top_empire, top_empire_number
 
+    @tf.function
     def calculate_empire_total_power(self, empires, colonies, empires_numbers):
+        @tf.function
         def condition(index, *unused):
             return tf.greater_equal(index, constants.int_zero)
 
+        @tf.function
         def evaluate_empire_power(index, total_power):
             empire_number = tf.gather(empire_numbers, index)
             empire_colonies_power_sum = tf.reduce_sum(
@@ -269,7 +320,7 @@ class ICA:
         empire_numbers, _ = tf.unique(empires_numbers)
         colonies_power = self.evaluate_countries_power(colonies)
 
-        initial_params = (tf.subtract(tf.size(empire_numbers), 1), tf.ones([self.num_of_colonies, 1], tf.float64))
+        initial_params = (tf.subtract(tf.size(empire_numbers), 1), tf.ones([self.num_of_colonies, 1], dtype=tf.float64))
         _, total_cost = tf.while_loop(condition, evaluate_empire_power, initial_params)
 
         total_cost = tf.squeeze(total_cost)
@@ -277,6 +328,7 @@ class ICA:
         total_power = tf.abs(tf.truediv(normalised_total_cost, tf.reduce_sum(normalised_total_cost)))
         return total_power
 
+    @tf.function
     def check_number_of_imperialist(self, empires_numbers, worst_empire_number):
         self.num_of_imperialist = tf.where(
             tf.equal(0, tf.reduce_sum(tf.cast(tf.equal(empires_numbers, worst_empire_number), tf.int32))),
@@ -284,15 +336,19 @@ class ICA:
             self.num_of_imperialist
         )
 
-    # @tf.function
+    @tf.function
     def merging_of_similar(self, empires, colonies, empires_numbers):
+        @tf.function
         def outer_condition(_, checked_count, *unused):
             return tf.less(checked_count, self.num_of_imperialist)
 
+        @tf.function
         def outer_loop(outer_empire_number, checked_count, empires, empires_numbers):
+            @tf.function
             def inner_condition(inner_index, *unused):
                 return tf.less(inner_index, self.num_of_imperialist)
 
+            @tf.function
             def inner_loop(inner_empire_number, outer_empire_number, outer_empire, empires, empires_numbers):
                 inner_empire = self.get_first_by_empire_number(inner_empire_number, empires, empires_numbers)
                 new_empires, new_empires_numbers = tf.cond(
@@ -332,7 +388,9 @@ class ICA:
         _, _, new_empires, new_empires_numbers = tf.while_loop(outer_condition, outer_loop, outer_initial_params)
         return new_empires, colonies, new_empires_numbers
 
+    @tf.function
     def merge_empires(self, outer_number, inner_number, outer_empire, inner_empire, empires, empires_numbers):
+        @tf.function
         def merge():
             condition = tf.equal(empires_numbers, inner_number)
             new_empires = self.broadcastable_where(condition, outer_empire, empires)
@@ -346,17 +404,31 @@ class ICA:
             lambda: (empires, empires_numbers)
         )
 
+    @tf.function
     def are_two_empires_close(self, first_empire, second_empire):
         return tf.less(tf.norm(tf.subtract(first_empire, second_empire)), self.close_empires_rating)
 
+    @tf.function
     def start_benchmark(self):
+        tf.print("|----------------- START -----------------|")
         self.timeit = timeit.default_timer()
 
-    def finish_benchmark(self):
+    @tf.function
+    def finish_benchmark(self, result):
         if self.is_loggable:
             self.evaluation_time = timeit.default_timer() - self.timeit
-            print("Evaluation time", self.evaluation_time)
+            tf.print(result)
+            tf.print(self.cost_function.function(result))
+            tf.print("|----------------- PARAMETERS -----------------|")
+            tf.print("| Iterations:      ", self.max_iterations)
+            tf.print("| Bounds:          ", self.lower, self.upper)
+            tf.print("| Dimension:       ", self.dimension)
+            tf.print("| Empires number:  ", self.num_of_imperialist)
+            tf.print("| Colonies number: ", self.num_of_colonies)
+            tf.print("| Evaluation time: ", self.evaluation_time)
+            tf.print("| Countries mean value: ", self.value_mean.result())
 
+    @tf.function
     def get_all_by_empire_number(self, empire_number, tensor, empires_numbers):
         return tf.cond(
             self.is_empty(tensor),
@@ -364,6 +436,7 @@ class ICA:
             lambda: tf.boolean_mask(tf.squeeze(tensor), tf.equal(empire_number, empires_numbers))
         )
 
+    @tf.function
     def get_first_by_empire_number(self, empire_number, tensor, empires_numbers):
         result = tf.boolean_mask(tf.squeeze(tensor), tf.equal(empire_number, empires_numbers))
         return tf.cond(
@@ -375,39 +448,49 @@ class ICA:
                             )
         )
 
+    @tf.function
     def delete_rows(self, tensor, index):
-        return tf.boolean_mask(tensor,
-                               tf.subtract(1, tf.reduce_sum(tf.one_hot(index, self.num_of_countries), 0), tf.bool))
+        return tf.boolean_mask(tensor, tf.subtract(1.0, tf.reduce_sum(tf.one_hot(index, self.num_of_countries), 0)))
 
+    @tf.function
     def evaluate_countries_power(self, countries):
         return tf.squeeze(tf.transpose(tf.map_fn(self.cost_function.function, countries)))
 
+    @tf.function
     def broadcastable_where(self, bool_mask, vector, tensor):
         return tf.where(self.broadcast_boolean_mask(bool_mask, tensor.shape),
                         tf.multiply(tf.ones_like(tensor), vector),
                         tensor)
 
+    @tf.function
     def broadcast_boolean_mask(self, bool_vector, shape):
         return tf.reshape(tf.repeat(bool_vector, shape[1]), shape)
 
+    @tf.function
     def replace_row_in_matrix(self, tensor, row, index):
-        mask = tf.equal(tf.range(tensor.shape[0]), index)
+        mask = tf.equal(tf.range(tensor.get_shape()[0]), index)
         return self.broadcastable_where(mask, row, tensor)
 
     @staticmethod
+    @tf.function
     def normalize_vectors(vector):
         norm = tf.sqrt(tf.reduce_sum(tf.square(vector), keepdims=True))
         return vector / norm
 
     @staticmethod
+    @tf.function
     def calculate_distribution(shape, minval, maxval, seed=None):
         return tf.random.uniform(shape=shape,
                                  minval=minval,
                                  maxval=maxval,
-                                 dtype=dtypes.float64,
+                                 dtype=tf.float64,
                                  seed=seed
                                  )
 
     @staticmethod
+    @tf.function
     def is_empty(tensor):
         return tf.equal(tf.size(tensor), constants.int_zero)
+
+    def collect_data(self, empires, colonies, empires_numbers):
+        self.value_mean(self.evaluate_countries_power(empires))

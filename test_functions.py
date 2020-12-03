@@ -10,14 +10,13 @@ class CostFunction:
         self.dimension = dimension
 
 
-# @tf.function
+@tf.function
 def rastrigin_func(vector: tf.Tensor):
-    ten = tf.constant(10.0, tf.float64)
-    return tf.foldl((lambda accumulator, x: accumulator + x * x + tf.math.cos(constants.two_pi * x)), vector,
-                    ten * tf.dtypes.cast(tf.shape(vector), tf.float64))
+    init = tf.constant(10.0, tf.float64) * tf.dtypes.cast(tf.shape(vector), tf.float64)
+    return init + tf.reduce_sum(tf.square(vector) + tf.math.cos(constants.two_pi * vector))
 
 
-# @tf.function
+@tf.function
 def ackley_func(vector: tf.Tensor):
     a = tf.constant(20.0, tf.float64)
     b = tf.constant(0.2, tf.float64)
@@ -25,34 +24,32 @@ def ackley_func(vector: tf.Tensor):
     n = tf.dtypes.cast(tf.shape(vector), tf.float64)
     sum1 = tf.reduce_sum(tf.square(vector))
     sum2 = tf.reduce_sum(tf.math.cos(tf.multiply(c, vector)))
-    return -a * tf.math.exp(-b * tf.math.sqrt(tf.math.divide(sum1, n))) \
-           - tf.math.exp(tf.math.divide(sum2, n)) + a + constants.e
+    return -a * tf.exp(-b * tf.sqrt(tf.truediv(sum1, n))) - tf.exp(tf.divide(sum2, n)) + a + constants.e
 
 
-# @tf.function
+@tf.function
 def schwefel_func(vector: tf.Tensor):
     a = tf.constant(418.9829, tf.float64)
     n = tf.dtypes.cast(tf.shape(vector), tf.float64)
-    sum1 = tf.foldl((lambda accumulator, x: accumulator + x * tf.math.sin(tf.math.sqrt(tf.math.abs(x)))), vector,
-                    constants.zero)
+    sum1 = tf.reduce_sum(vector * tf.sin(tf.sqrt(tf.abs(vector))))
     return a * n - sum1
 
 
-# @tf.function
+@tf.function
 def rosenbrock_func(vector: tf.Tensor):
     a = tf.constant(100.0, tf.float64)
     index_sum = (tf.constant(0), constants.zero)
 
-    # @tf.function
+    @tf.function
     def condition(index, _):
         return tf.less(index, tf.subtract(tf.shape(vector)[0], 1))
 
-    # @tf.function
+    @tf.function
     def body(index, summation):
         result = tf.add(summation,
                         a * tf.math.squared_difference(
                             tf.gather(vector, tf.add(index, 1)),
-                            tf.math.square(tf.gather(vector, index))
+                            tf.square(tf.gather(vector, index))
                         ) + tf.math.squared_difference(tf.gather(vector, index), constants.one))
         return tf.add(index, 1), result
 
@@ -63,4 +60,4 @@ rastrigin = CostFunction(rastrigin_func, 100.0, -100.0, 10)
 ackley = CostFunction(ackley_func, 10.0, -10.0, 2)
 schwefel = CostFunction(schwefel_func, 100.0, -100.0, 10)
 rosenbrock = CostFunction(rosenbrock_func, 100.0, -100.0, 10)
-square = CostFunction(lambda x: tf.reduce_sum(tf.square(x)), 100.0, -100.0, 2)
+square = CostFunction(lambda x: tf.reduce_sum(tf.square(x)), 10.0, -10.0, 2)
