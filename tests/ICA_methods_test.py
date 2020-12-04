@@ -4,6 +4,8 @@ from ica import ICA
 from test_functions import CostFunction
 from numpy.testing import assert_equal
 
+tf.config.run_functions_eagerly(False)
+
 
 class MyTestCase(unittest.TestCase):
 
@@ -57,7 +59,7 @@ class MyTestCase(unittest.TestCase):
     def test_swap_strongest_one_colony_to_swap(self):
         # given
         test_function = CostFunction(lambda x: tf.reduce_sum(tf.square(x)), 10.0, -10.0, 2)
-        ica = ICA(test_function, 5, 2, 1, log=True, seed=42)
+        ica = ICA(test_function, 5, 2, 1, log=True)
         empires = tf.constant([[3., 3., ],
                                [3., 3., ],
                                [2., 4., ]
