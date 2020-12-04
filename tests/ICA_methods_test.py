@@ -1,10 +1,11 @@
 import unittest
 import tensorflow as tf
-from ica import ICA
+from ica.ica import ICA
 from test_functions import CostFunction
 from numpy.testing import assert_equal
 
-tf.config.run_functions_eagerly(False)
+# tf.config.run_functions_eagerly(False)
+tf.config.run_functions_eagerly(True)
 
 
 class MyTestCase(unittest.TestCase):
@@ -46,7 +47,7 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0])
         # when
-        _, new_colonies, _ = ica.assimilation(empires, colonies, empires_numbers)
+        new_colonies = ica.assimilation(empires, colonies)
         # then
         distance_before = tf.map_fn(tf.norm, tf.subtract(empires, colonies))
         distance_after = tf.map_fn(tf.norm, tf.subtract(empires, new_colonies))
@@ -70,9 +71,8 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0])
         # when
-        new_empires, new_colonies, new_empire_numbers = ica.swap_strongest(empires, colonies, empires_numbers)
+        new_empires, new_colonies = ica.swap_strongest(empires, colonies, empires_numbers)
         # then
-        self.assertTrue(tf.reduce_all(tf.equal(empires_numbers, new_empire_numbers)).numpy())
         assert_equal(new_empires.numpy(), [[1., 1., ],
                                            [1., 1., ],
                                            [2., 4., ]])
@@ -94,9 +94,8 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0])
         # when
-        new_empires, new_colonies, new_empire_numbers = ica.swap_strongest(empires, colonies, empires_numbers)
+        new_empires, new_colonies = ica.swap_strongest(empires, colonies, empires_numbers)
         # then
-        self.assertTrue(tf.reduce_all(tf.equal(empires_numbers, new_empire_numbers)).numpy())
         assert_equal(new_empires.numpy(), [[1., 1., ],
                                            [1., 1., ],
                                            [2., 4., ]])
@@ -118,9 +117,8 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0])
         # when
-        new_empires, new_colonies, new_empire_numbers = ica.swap_strongest(empires, colonies, empires_numbers)
+        new_empires, new_colonies = ica.swap_strongest(empires, colonies, empires_numbers)
         # then
-        self.assertTrue(tf.reduce_all(tf.equal(empires_numbers, new_empire_numbers)).numpy())
         assert_equal(new_empires.numpy(), [[3., 3., ],
                                            [3., 3., ],
                                            [2., 4., ]])
@@ -144,7 +142,7 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0, 0])
         # when
-        new_empires, new_colonies, new_empire_numbers = ica.competition(empires, colonies, empires_numbers)
+        new_empires, new_empire_numbers, _ = ica.competition(empires, colonies, empires_numbers)
         # then
         assert_equal(new_empire_numbers.numpy(), [1, 1, 0, 1])
         assert_equal(new_empires.numpy(), [[3., 3., ],
@@ -168,7 +166,7 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 1, 1])
         # when
-        new_empires, new_colonies, new_empire_numbers = ica.competition(empires, colonies, empires_numbers)
+        new_empires, new_empire_numbers, _ = ica.competition(empires, colonies, empires_numbers)
         # then
         assert_equal(new_empire_numbers.numpy(), empires_numbers.numpy())
         assert_equal(new_empires.numpy(), empires.numpy())
