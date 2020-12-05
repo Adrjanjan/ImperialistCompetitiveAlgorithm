@@ -32,11 +32,12 @@ class ICA:
 
     @tf.function
     def eval(self):
-        # country is a row of matrix where each value is parameter of some cost function
-        # colonies is matrix, where each row represents colony country, no duplicates
-        # empires is matrix, where each row represents empire country, duplicates
-        # corresponding row in matrices colonies and empires represents connection
-        # between colony belonging to an empire
+        # Country is a row (x*) of matrix where each value is parameter of some cost function (F),
+        # where F(x*) is value of cost function for country.
+        # Colonies is matrix, where each row represents colony country, no duplicates.
+        # Empires is matrix, where each row represents empire country, duplicates.
+        # Corresponding row in matrices colonies and empires represents connection
+        # between colony belonging to an empire. The same relation is mapped in empires_numbers vector.
 
         self.start_benchmark()
         countries = self.initialize_countries()
@@ -51,17 +52,19 @@ class ICA:
 
     @tf.function
     def create_empires(self, countries):
-        return init.create_empires(countries, self.dimension, self.num_of_colonies,
-                                   self.num_of_imperialist, self.cost_function.function)
+        return init.create_empires(countries=countries, dimension=self.dimension, num_of_colonies=self.num_of_colonies,
+                                   num_of_imperialist=self.num_of_imperialist, cost_function=self.cost_function.function
+                                   )
 
     @tf.function
     def initialize_countries(self):
-        return init.initialize_countries(self.num_of_countries, self.dimension, self.lower, self.upper)
+        return init.initialize_countries(num_of_countries=self.num_of_countries, dimension=self.dimension,
+                                         lower=self.lower, upper=self.upper)
 
     @tf.function
     def stop_condition(self, index, _, __, empires_numbers):
         unique, _ = tf.unique(empires_numbers)
-        return tf.logical_and(tf.greater_equal(index, constants.int_zero),
+        return tf.logical_and(tf.greater(index, constants.int_zero),
                               tf.logical_not(tf.equal(constants.int_one, tf.size(unique)))
                               )
 
@@ -71,38 +74,40 @@ class ICA:
         colonies = self.revolution(colonies)
         empires, colonies = self.swap_strongest(colonies, empires, empires_numbers)
         empires, empires_numbers, self.num_of_imperialist = self.competition(colonies, empires, empires_numbers)
-        empires, empires_numbers = self.merging(empires, empires_numbers)
+        # empires, empires_numbers = self.merging(empires, empires_numbers)
         self.collect_data(empires, colonies, empires_numbers)
         return tf.subtract(index, 1), empires, colonies, empires_numbers
 
     @tf.function
     def assimilation(self, colonies, empires):
-        return assimillation.assimilation(colonies, empires, self.num_of_colonies, self.dimension,
-                                          self.direct_assimilation, self.lower, self.upper)
+        return assimillation.assimilation(colonies=colonies, empires=empires, num_of_colonies=self.num_of_colonies,
+                                          dimension=self.dimension, lower=self.lower, upper=self.upper,
+                                          direct_assimilation=self.direct_assimilation)
 
     @tf.function
     def revolution(self, colonies):
-        return revolution.revolution(colonies, self.num_of_colonies, self.dimension,
-                                     self.lower, self.upper, self.revolution_rate)
+        return revolution.revolution(colonies=colonies, num_of_colonies=self.num_of_colonies,
+                                     dimension=self.dimension, lower=self.lower, upper=self.upper,
+                                     revolution_rate=self.revolution_rate)
 
     @tf.function
     def swap_strongest(self, colonies, empires, empires_numbers):
-        return swap_strongest.swap_strongest(colonies, empires, empires_numbers,
-                                             self.num_of_colonies,
-                                             self.cost_function.function)
+        return swap_strongest.swap_strongest(colonies=colonies, empires=empires, empires_numbers=empires_numbers,
+                                             num_of_colonies=self.num_of_colonies,
+                                             cost_function=self.cost_function.function)
 
     @tf.function
     def competition(self, colonies, empires, empires_numbers):
-        return competition.competition(colonies, empires, empires_numbers,
-                                       self.num_of_colonies,
-                                       self.num_of_imperialist,
-                                       self.cost_function.function,
-                                       self.avg_colonies_power,
-                                       self.dimension)
+        return competition.competition(colonies=colonies, empires=empires, empires_numbers=empires_numbers,
+                                       num_of_colonies=self.num_of_colonies, num_of_imperialist=self.num_of_imperialist,
+                                       dimension=self.dimension, cost_function=self.cost_function.function,
+                                       avg_colonies_power=self.avg_colonies_power)
 
     @tf.function
     def merging(self, empires, empires_numbers):
-        return merging.merging_of_similar(empires, empires_numbers, self.num_of_imperialist, self.close_empires_rating)
+        return merging.merging_of_similar(empires=empires, empires_numbers=empires_numbers,
+                                          num_of_imperialist=self.num_of_imperialist,
+                                          close_empires_rating=self.close_empires_rating)
 
     @tf.function
     def start_benchmark(self):

@@ -38,26 +38,6 @@ def schwefel_func(vector: tf.Tensor):
 @tf.function
 def rosenbrock_func(vector: tf.Tensor):
     a = tf.constant(100.0, tf.float64)
-    index_sum = (tf.constant(0), constants.zero)
-
-    @tf.function
-    def condition(index, _):
-        return tf.less(index, tf.subtract(tf.shape(vector)[0], 1))
-
-    @tf.function
-    def body(index, summation):
-        result = tf.add(summation,
-                        a * tf.math.squared_difference(
-                            tf.gather(vector, tf.add(index, 1)),
-                            tf.square(tf.gather(vector, index))
-                        ) + tf.math.squared_difference(tf.gather(vector, index), constants.one))
-        return tf.add(index, 1), result
-
-    return tf.while_loop(condition, body, index_sum)[1]
-
-
-rastrigin = CostFunction(rastrigin_func, 100.0, -100.0, 10)
-ackley = CostFunction(ackley_func, 10.0, -10.0, 2)
-schwefel = CostFunction(schwefel_func, 100.0, -100.0, 10)
-rosenbrock = CostFunction(rosenbrock_func, 100.0, -100.0, 10)
-square = CostFunction(lambda x: tf.reduce_sum(tf.square(x)), 10.0, -10.0, 2)
+    sum1 = a * tf.square(vector[1:] - tf.square(vector[:-1]))
+    sum2 = tf.square(vector[:-1] - constants.one)
+    return tf.reduce_sum(sum1 + sum2)
