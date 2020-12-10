@@ -26,9 +26,11 @@ class ICA:
         self.revolution_rate = tf.constant(revolution_rate, dtype=tf.float64)
         self.close_empires_rating = tf.constant(close_empires_rating, dtype=tf.float64)
         self.is_loggable = log
-        self.timeit = 0
+        self.timeit = None
         self.seed = seed
-        self.value_mean = tf.metrics.Mean()
+        self.final_iteration = None
+        self.result = None
+        self.lowest_cost_per_iteration = tf.TensorArray(tf.float64, size=0, dynamic_size=True, clear_after_read=False)
 
     @tf.function
     def eval(self):
@@ -42,13 +44,13 @@ class ICA:
         self.start_benchmark()
         countries = self.initialize_countries()
         empires, colonies, empires_numbers = self.create_empires(countries)
-        loop_params = (tf.constant(self.max_iterations), empires, colonies, empires_numbers)
+        loop_params = (constants.int_zero, empires, colonies, empires_numbers)
 
-        _, empires, _, _ = tf.while_loop(self.stop_condition, self.main_loop, loop_params)
+        self.final_iteration, empires, _, _ = tf.while_loop(self.stop_condition, self.main_loop, loop_params)
 
-        solution = empires[0]
-        self.finish_benchmark(solution)
-        return solution
+        self.result = empires[0]
+        self.finish_benchmark()
+        return self.result
 
     @tf.function
     def create_empires(self, countries):
@@ -64,7 +66,7 @@ class ICA:
     @tf.function
     def stop_condition(self, index, _, __, empires_numbers):
         unique, _ = tf.unique(empires_numbers)
-        return tf.logical_and(tf.greater(index, constants.int_zero),
+        return tf.logical_and(tf.less(index, self.max_iterations),
                               tf.logical_not(tf.equal(constants.int_one, tf.size(unique)))
                               )
 
@@ -75,8 +77,8 @@ class ICA:
         empires, colonies = self.swap_strongest(colonies, empires, empires_numbers)
         empires, empires_numbers, self.num_of_imperialist = self.competition(colonies, empires, empires_numbers)
         # empires, empires_numbers = self.merging(empires, empires_numbers)
-        self.collect_data(empires, colonies, empires_numbers)
-        return tf.subtract(index, 1), empires, colonies, empires_numbers
+        self.collect_data(index, empires, colonies, empires_numbers)
+        return tf.add(index, 1), empires, colonies, empires_numbers
 
     @tf.function
     def assimilation(self, colonies, empires):
@@ -111,23 +113,43 @@ class ICA:
 
     @tf.function
     def start_benchmark(self):
-        tf.print("|----------------- START -----------------|")
+        if self.is_loggable:
+            tf.print("|----------------- START -----------------|")
         self.timeit = timeit.default_timer()
 
     @tf.function
-    def finish_benchmark(self, result):
+    def finish_benchmark(self):
+        self.evaluation_time = timeit.default_timer() - self.timeit
         if self.is_loggable:
-            self.evaluation_time = timeit.default_timer() - self.timeit
-            tf.print(result)
-            tf.print(self.cost_function.function(result))
             tf.print("|----------------- PARAMETERS -----------------|")
+            tf.print("| Result value:    ", self.cost_function.function(self.result))
             tf.print("| Iterations:      ", self.max_iterations)
             tf.print("| Bounds:          ", self.lower, self.upper)
             tf.print("| Dimension:       ", self.dimension)
             tf.print("| Empires number:  ", self.num_of_imperialist)
             tf.print("| Colonies number: ", self.num_of_colonies)
             tf.print("| Evaluation time: ", self.evaluation_time)
-            tf.print("| Countries mean value: ", self.value_mean.result())
 
-    def collect_data(self, empires, colonies, empires_numbers):
-        self.value_mean(helpers.evaluate_countries_power(empires, self.cost_function.function))
+    def collect_data(self, index, empires, colonies, empires_numbers):
+        self.lowest_cost_per_iteration = self.lowest_cost_per_iteration.write(index, tf.reduce_min(
+            helpers.evaluate_countries_power(empires, self.cost_function.function)))
+
+    def set_evaluation_data(self, result, final_iteration):
+        self.result = result
+        self.final_iteration = final_iteration
+
+    def get_evaluation_data(self):
+        return {
+            "evaluation_time": self.evaluation_time,
+            "reached_minimum": self.cost_function.function(self.result).numpy(),
+            "final_iteration": self.final_iteration.numpy(),
+            "max_iterations": self.max_iterations,
+            "empires_number": self.num_of_imperialist.numpy(),
+            "colonies_number": self.num_of_colonies,
+            # "deviation_assimilation": self.deviation_assimilation,
+            "direct_assimilation": self.direct_assimilation.numpy(),
+            "avg_colonies_power": self.avg_colonies_power.numpy(),
+            "revolution_rate": self.revolution_rate.numpy(),
+            "lowest_cost_per_iteration": self.lowest_cost_per_iteration.stack(),
+            # "close_empires_rating": self.close_empires_rating,
+        }
