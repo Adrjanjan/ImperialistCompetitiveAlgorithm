@@ -79,7 +79,7 @@ def get_first_by_empire_number(empire_number, tensor, empires_numbers):
 
 @tf.function
 def broadcast_boolean_mask(bool_vector, shape):
-    return tf.broadcast_to(bool_vector, shape)
+    return tf.reshape(tf.repeat(bool_vector, shape[1]), shape)
 
 
 @tf.function

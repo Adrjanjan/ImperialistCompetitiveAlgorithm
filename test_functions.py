@@ -14,24 +14,27 @@ class CostFunction:
         if o_vector is not None:
             self.o_vector = self.read_vector(o_vector, tf.float64)
         if p_vector is not None:
-            self.p_vector = self.read_vector(p_vector, tf.int32)
+            self.p_vector = self.read_matrix(p_vector, tf.int32)
         if r_25 is not None:
-            self.r_25 = self.read_vector(r_25, tf.float64)
+            self.r_25 = self.read_matrix(r_25, tf.float64)
         if r_50 is not None:
-            self.r_50 = self.read_vector(r_50, tf.float64)
+            self.r_50 = self.read_matrix(r_50, tf.float64)
         if r_100 is not None:
-            self.r_100 = self.read_vector(r_100, tf.float64)
+            self.r_100 = self.read_matrix(r_100, tf.float64)
         if s is not None:
             self.s = self.read_vector(s, tf.int32)
         if w is not None:
             self.w = self.read_vector(w, tf.float64)
 
-    def read_vector(self, filename, type):
+    @staticmethod
+    def read_vector(filename, type):
         with open(filename, 'r') as file:
-            result = tf.constant(file.readlines(), type)
+            lines = [float(f) for f in file.readlines()]
+            result = tf.constant(lines, type)
             return result
 
-    def read_matrix(self, filename, type):
+    @staticmethod
+    def read_matrix(filename, type):
         with open(filename, 'r') as file:
             matrix = [[float(num) for num in line.split(',')] for line in file]
             return tf.constant(matrix, type)
@@ -98,9 +101,5 @@ class CostFunction:
 
     @tf.function
     def elliptic_func(self, vector: tf.Tensor):
-        return tf.reduce_sum(tf.math.pow(1.0e6, self.powers) * tf.square(vector))
-
-    @tf.function
-    def M1(self, vector: tf.Tensor):
-        # TODO
-        pass
+        base = tf.constant(1.0e6, tf.float64)
+        return tf.reduce_sum(tf.math.pow(base, self.powers) * tf.square(self.transform_osz(vector)))
