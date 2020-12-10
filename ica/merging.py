@@ -61,15 +61,15 @@ def merging_of_similar(empires, empires_numbers, num_of_imperialist, close_empir
                                 outer_empire,
                                 empires,
                                 empires_numbers)
-        empire_with_current_number_exists = helpers.is_empty(outer_empire)
+        empire_with_current_number_not_exists = helpers.is_empty(outer_empire)
         _, _, _, new_empires, new_empires_numbers = tf.cond(
-            empire_with_current_number_exists,
+            empire_with_current_number_not_exists,
             lambda: inner_initial_params,
             lambda: tf.while_loop(inner_condition, inner_loop, inner_initial_params)
         )
 
         new_checked_count = tf.cond(
-            empire_with_current_number_exists,
+            empire_with_current_number_not_exists,
             lambda: checked_count,
             lambda: tf.add(checked_count, 1),
         )
