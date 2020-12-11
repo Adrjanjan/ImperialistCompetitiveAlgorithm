@@ -28,7 +28,7 @@ def delete_rows(tensor, index, length):
 
 @tf.function
 def evaluate_countries_power(countries, cost_function):
-    return tf.squeeze(tf.transpose(tf.map_fn(cost_function, countries)))
+    return tf.map_fn(cost_function, countries)
 
 
 @tf.function

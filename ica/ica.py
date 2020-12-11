@@ -71,13 +71,17 @@ class ICA:
                               )
 
     @tf.function
-    def main_loop(self, index, empires, colonies, empires_numbers):
+    def main_loop(self, index, colonies, empires, empires_numbers):
         colonies = self.assimilation(colonies, empires)
         colonies = self.revolution(colonies)
-        empires, colonies = self.swap_strongest(colonies, empires, empires_numbers)
-        empires, empires_numbers, self.num_of_imperialist = self.competition(colonies, empires, empires_numbers)
+        colonies, empires, empires_power, colonies_power = self.swap_strongest(colonies, empires, empires_numbers)
+        empires, empires_numbers, empires_power, colonies_power, self.num_of_imperialist = self.competition(colonies,
+                                                                                                            empires,
+                                                                                                            empires_numbers,
+                                                                                                            empires_power,
+                                                                                                            colonies_power)
         # empires, empires_numbers = self.merging(empires, empires_numbers)
-        self.collect_data(index, empires, colonies, empires_numbers)
+        self.collect_data(index, empires, colonies, empires_numbers, empires_power)
         return tf.add(index, 1), empires, colonies, empires_numbers
 
     @tf.function
@@ -99,11 +103,12 @@ class ICA:
                                              cost_function=self.cost_function.function)
 
     @tf.function
-    def competition(self, colonies, empires, empires_numbers):
+    def competition(self, colonies, empires, empires_numbers, empires_power, colonies_power):
         return competition.competition(colonies=colonies, empires=empires, empires_numbers=empires_numbers,
                                        num_of_colonies=self.num_of_colonies, num_of_imperialist=self.num_of_imperialist,
                                        dimension=self.dimension, cost_function=self.cost_function.function,
-                                       avg_colonies_power=self.avg_colonies_power)
+                                       avg_colonies_power=self.avg_colonies_power, empires_power=empires_power,
+                                       colonies_power=colonies_power)
 
     @tf.function
     def merging(self, empires, empires_numbers):
@@ -130,9 +135,8 @@ class ICA:
             tf.print("| Colonies number: ", self.num_of_colonies)
             tf.print("| Evaluation time: ", self.evaluation_time)
 
-    def collect_data(self, index, empires, colonies, empires_numbers):
-        self.lowest_cost_per_iteration = self.lowest_cost_per_iteration.write(index, tf.reduce_min(
-            helpers.evaluate_countries_power(empires, self.cost_function.function)))
+    def collect_data(self, index, empires, colonies, empires_numbers, empires_power):
+        self.lowest_cost_per_iteration = self.lowest_cost_per_iteration.write(index, tf.reduce_min(empires_power))
 
     def set_evaluation_data(self, result, final_iteration):
         self.result = result

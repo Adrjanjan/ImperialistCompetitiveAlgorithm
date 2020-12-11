@@ -4,18 +4,18 @@ import constants
 
 
 @tf.function
-def select_worst_colony_index(empire_index, colonies, empires_indexes, num_of_colonies, dimension, cost_function):
-    colonies_with_index = tf.concat([colonies, tf.cast(tf.range(num_of_colonies)[:, None], dtype=tf.float64)],
-                                    axis=1)
-    current_empire_colonies_with_index = helpers.get_all_by_empire_number(empire_index, colonies_with_index,
-                                                                          empires_indexes)
-    current_empire_colonies = tf.reshape(current_empire_colonies_with_index[:, :-1],
-                                         [current_empire_colonies_with_index.shape[0], dimension])
-    colonies_power = tf.reshape(
-        helpers.evaluate_countries_power(current_empire_colonies, cost_function), [-1])
+def select_worst_colony_index(empire_index, empires_indexes, num_of_colonies, dimension, colonies_power):
+    colonies_power_with_index = tf.concat([tf.expand_dims(colonies_power, axis=1),
+                                           tf.cast(tf.range(num_of_colonies)[:, None], dtype=tf.float64)],
+                                          axis=1)
+
+    current_empire_colonies_power_with_index = helpers.get_all_by_empire_number(empire_index, colonies_power_with_index,
+                                                                                empires_indexes)
+    colonies_power = tf.reshape(current_empire_colonies_power_with_index[:, :-1],
+                                (current_empire_colonies_power_with_index.shape[0],))
 
     _, current_worst_index = tf.math.top_k(colonies_power)
-    current_empire_colonies_index = tf.cast(current_empire_colonies_with_index[:, -1], tf.int32)
+    current_empire_colonies_index = tf.cast(current_empire_colonies_power_with_index[:, -1], tf.int32)
     worst_colony_index = tf.gather(current_empire_colonies_index, current_worst_index)
     return worst_colony_index
 
@@ -51,11 +51,9 @@ def evaluate_empire_power(index, total_power, empires_power, colonies_power, avg
 
 
 @tf.function
-def calculate_empires_total_power(colonies, empires, empires_numbers, cost_function, avg_colonies_power,
-                                  num_of_colonies):
+def calculate_empires_total_power(empires_numbers, avg_colonies_power,
+                                  num_of_colonies, empires_power, colonies_power):
     empire_numbers, _ = tf.unique(empires_numbers)
-    colonies_power = helpers.evaluate_countries_power(colonies, cost_function)
-    empires_power = helpers.evaluate_countries_power(empires, cost_function)
 
     initial_params = (tf.subtract(tf.size(empire_numbers), 1), tf.ones([num_of_colonies, 1], dtype=tf.float64),
                       empires_power, colonies_power, avg_colonies_power, empire_numbers, empires_numbers)
@@ -78,10 +76,10 @@ def check_number_of_imperialist(empires_numbers, worst_empire_number, num_of_imp
 
 @tf.function
 def competition(colonies, empires, empires_numbers, num_of_colonies, num_of_imperialist, cost_function,
-                avg_colonies_power, dimension):
+                avg_colonies_power, dimension, empires_power, colonies_power):
     # calculate total power
-    total_power = calculate_empires_total_power(colonies, empires, empires_numbers, cost_function, avg_colonies_power,
-                                                num_of_colonies)
+    total_power = calculate_empires_total_power(empires_numbers, avg_colonies_power, num_of_colonies,
+                                                empires_power, colonies_power)
 
     # select top and worst empire
     top_empire, top_empire_number = select_top_empire(empires, empires_numbers, total_power, num_of_colonies)
@@ -89,15 +87,20 @@ def competition(colonies, empires, empires_numbers, num_of_colonies, num_of_impe
     worst_empire_number = tf.gather(empires_numbers, worst_empire_index)
 
     # select worst colony from worst empire
-    worst_colony_index = select_worst_colony_index(worst_empire_number, colonies, empires_numbers, num_of_colonies,
-                                                   dimension, cost_function)
+    worst_colony_index = select_worst_colony_index(worst_empire_number, empires_numbers, num_of_colonies,
+                                                   dimension, colonies_power)
 
     # set new empire as empire of worst colony
     new_empires_numbers = tf.squeeze(
         helpers.replace_row_in_matrix(tf.expand_dims(empires_numbers, 1), top_empire_number, worst_colony_index)
     )
     new_empires = helpers.replace_row_in_matrix(empires, top_empire, worst_colony_index)
+    top_empire_power = helpers.get_first_by_empire_number(top_empire_number, empires_power, empires_numbers)
+    new_empires_power = tf.squeeze(
+        helpers.replace_row_in_matrix(tf.expand_dims(empires_power, 1), top_empire_power, worst_colony_index)
+    )
 
     # reduce num_of_imperialists if it was worst empire last presence
     new_num_of_imperialist = check_number_of_imperialist(new_empires_numbers, worst_empire_number, num_of_imperialist)
-    return new_empires, new_empires_numbers, new_num_of_imperialist
+
+    return new_empires, new_empires_numbers, new_empires_power, colonies_power, new_num_of_imperialist
