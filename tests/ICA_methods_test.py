@@ -1,7 +1,7 @@
 import unittest
 import tensorflow as tf
 from ica.ica import ICA
-from test_functions import CostFunction
+from algorithm_evaluation.test_functions import CostFunction
 from numpy.testing import assert_equal
 
 # tf.config.run_functions_eagerly(False)

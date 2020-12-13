@@ -73,7 +73,7 @@ class CostFunction:
 
     @tf.function
     def rastrigin_func(self, vector: tf.Tensor):
-        init = tf.constant(10.0, tf.float64) * tf.cast(tf.shape(vector), tf.float64)
+        init = tf.constant(10.0, tf.float64) * self.dimension
         return init + tf.reduce_sum(tf.square(vector) + tf.math.cos(constants.two_pi * vector))
 
     @tf.function

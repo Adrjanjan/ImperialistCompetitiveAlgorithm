@@ -1,8 +1,8 @@
 import timeit
 import tensorflow as tf
 import numpy as np
-from ica import init, helpers, assimillation, revolution, swap_strongest, competition, merging
-from test_functions import CostFunction
+from ica import init, assimillation, revolution, swap_strongest, competition, merging
+from algorithm_evaluation.test_functions import CostFunction
 import constants
 
 
@@ -137,10 +137,6 @@ class ICA:
 
     def collect_data(self, index, empires, colonies, empires_numbers, empires_power):
         self.lowest_cost_per_iteration = self.lowest_cost_per_iteration.write(index, tf.reduce_min(empires_power))
-
-    def set_evaluation_data(self, result, final_iteration):
-        self.result = result
-        self.final_iteration = final_iteration
 
     def get_evaluation_data(self):
         return {

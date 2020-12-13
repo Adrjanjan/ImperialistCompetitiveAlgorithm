@@ -9,18 +9,19 @@ def initialize_countries(num_of_countries, dimension, lower, upper):
 
 
 @tf.function
-def add_one_to_top_empire(empires, num_of_colonies):
-    more = tf.greater(tf.reduce_sum(empires), num_of_colonies)
-    less = tf.less(tf.reduce_sum(empires), num_of_colonies)
+def add_one_to_top_empire(num_of_colonies_per_empire, num_of_colonies):
+    more = tf.greater(tf.reduce_sum(num_of_colonies_per_empire), num_of_colonies)
+    less = tf.less(tf.reduce_sum(num_of_colonies_per_empire), num_of_colonies)
     return tf.cond(
         less,
-        lambda: tf.concat([tf.expand_dims(tf.add(empires[0], 1), 0), empires[1:]], 0),
+        lambda: tf.concat(
+            [tf.expand_dims(tf.add(num_of_colonies_per_empire[0], 1), 0), num_of_colonies_per_empire[1:]], 0),
         lambda: tf.cond(
             more,
-            lambda: tf.concat([tf.expand_dims(tf.subtract(empires[0], 1), 0), empires[1:]], 0),
-            lambda: empires
+            lambda: tf.concat(
+                [tf.expand_dims(tf.subtract(num_of_colonies_per_empire[0], 1), 0), num_of_colonies_per_empire[1:]], 0),
+            lambda: num_of_colonies_per_empire
         )
-
     )
 
 
@@ -69,11 +70,11 @@ def create_empires(countries, dimension, num_of_colonies, num_of_imperialist, co
     # (-1)*power is important to get lowest power first - lower cost means bigger power
     top_powers, top_indexes = tf.nn.top_k(-power, num_of_imperialist)
     top_powers = tf.negative(top_powers)
-    number_of_colonies = calculate_number_of_colonies(top_powers, num_of_colonies)
+    num_of_colonies_per_empire = calculate_number_of_colonies(top_powers, num_of_colonies)
     temp_empires = tf.zeros((num_of_colonies, dimension), dtype=tf.float64)
     temp_empires_numbers = tf.zeros((num_of_colonies, 1), tf.int32)
     iteration_initialization_params = (tf.constant(num_of_imperialist - 1),
-                                       number_of_colonies,
+                                       num_of_colonies_per_empire,
                                        top_indexes,
                                        temp_empires,
                                        temp_empires_numbers,

@@ -13,6 +13,7 @@ def create_and_save_plots_to_file(iterations_results, file_path, function_name):
         y = params["lowest_cost_per_iteration"]
         x = range(len(y))
         plt.plot(x, y, label=str(index))
+        plt.yscale("log")
     plt.legend()
     plt.savefig(file_path + function_name + '.png', bbox_inches='tight')
 
@@ -62,6 +63,7 @@ def gridsearch(function, params):
     param_grid = ParameterGrid(params)
     iterations_results = []
     for index, params in enumerate(param_grid):
+        print(params)
         ica = ICA(cost_function=function,
                   num_of_countries=params["num_of_countries"],
                   num_of_imperialist=params["num_of_imperialist"],
@@ -75,5 +77,18 @@ def gridsearch(function, params):
                   )
         ica.eval()
         metadata = ica.get_evaluation_data()
+        print(metadata)
+        save_metadata_per_iteration(index, metadata, "results/metadata")
+        save_result(index, ica.result, "results/result")
         iterations_results.append((index, metadata))
     return iterations_results
+
+
+def save_metadata_per_iteration(index, metadata, file_path):
+    with open(file_path + str(index) + ".txt", "w") as text_file:
+        text_file.write(str(metadata))
+
+
+def save_result(index, result, file_path):
+    with open(file_path + str(index) + ".txt", "w") as text_file:
+        text_file.write(str(result))
