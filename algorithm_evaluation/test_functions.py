@@ -10,11 +10,12 @@ class CostFunction:
         self.lower = lower
         self.dimension = dimension
         self.powers = tf.range(0, self.dimension, dtype=tf.float64) / (self.dimension - 1)
+        self.s_size = None
 
         if o_vector is not None:
             self.o_vector = self.read_vector(o_vector, tf.float64)
         if p_vector is not None:
-            self.p_vector = self.read_matrix(p_vector, tf.int32)
+            self.p_vector = tf.squeeze(tf.subtract(self.read_matrix(p_vector, tf.int32), 1))
         if r_25 is not None:
             self.r_25 = self.read_matrix(r_25, tf.float64)
         if r_50 is not None:
@@ -30,14 +31,14 @@ class CostFunction:
     def read_vector(filename, type):
         with open(filename, 'r') as file:
             lines = [float(f) for f in file.readlines()]
-            result = tf.constant(lines, type)
+            result = tf.cast(tf.constant(lines), type)
             return result
 
     @staticmethod
     def read_matrix(filename, type):
         with open(filename, 'r') as file:
             matrix = [[float(num) for num in line.split(',')] for line in file]
-            return tf.constant(matrix, type)
+            return tf.cast(tf.constant(matrix), type)
 
     @tf.function
     def transform_osz(self, x: tf.Tensor):
@@ -100,6 +101,16 @@ class CostFunction:
         return tf.reduce_sum(sum1 + sum2)
 
     @tf.function
-    def elliptic_func(self, vector: tf.Tensor):
+    def elliptic_func(self, vector: tf.Tensor, start=None, end=None):
         base = tf.constant(1.0e6, tf.float64)
-        return tf.reduce_sum(tf.math.pow(base, self.powers) * tf.square(self.transform_osz(vector)))
+        return tf.reduce_sum(tf.math.pow(base, self.powers[start:end:, ]) * tf.square(self.transform_osz(vector)))
+
+    @tf.function
+    def rotate_vector(self, vector, start, size):
+        rotated = tf.expand_dims(tf.gather(vector, self.p_vector[start:start + size]), 1)
+        multiplied = tf.case([
+            (tf.equal(size, 25), lambda: tf.matmul(self.r_25, rotated)),
+            (tf.equal(size, 50), lambda: tf.matmul(self.r_50, rotated)),
+            (tf.equal(size, 100), lambda: tf.matmul(self.r_100, rotated)),
+        ])
+        return tf.squeeze(multiplied)
