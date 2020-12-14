@@ -1,5 +1,3 @@
-import tensorflow as tf
-import constants
 from algorithm_evaluation.evaluation_helper import *
 from algorithm_evaluation.test_functions import CostFunction
 
@@ -7,13 +5,13 @@ from algorithm_evaluation.test_functions import CostFunction
 class F4_Elliptic(CostFunction):
 
     def __init__(self, upper=100, lower=-100, dimension=1000,
-                 o_vector="resources/F4-xopt.txt",
-                 p_vector="resources/F4-p.txt",
-                 r_25="resources/F4-R25.txt",
-                 r_50="resources/F4-R50.txt",
-                 r_100="resources/F4-R100.txt",
-                 s="resources/F4-s.txt",
-                 w="resources/F4-w.txt"):
+                 o_vector="algorithm_evaluation/F4/resources/F4-xopt.txt",
+                 p_vector="algorithm_evaluation/F4/resources/F4-p.txt",
+                 r_25="algorithm_evaluation/F4/resources/F4-R25.txt",
+                 r_50="algorithm_evaluation/F4/resources/F4-R50.txt",
+                 r_100="algorithm_evaluation/F4/resources/F4-R100.txt",
+                 s="algorithm_evaluation/F4/resources/F4-s.txt",
+                 w="algorithm_evaluation/F4/resources/F4-w.txt"):
         super().__init__(self.elliptic, upper, lower, dimension, o_vector, p_vector, r_25, r_50, r_100, s, w)
         self.s_size = 7
 
@@ -60,6 +58,6 @@ iterations_results = gridsearch(F4_Elliptic(), params)
 
 print(iterations_results)
 
-file_path = "results/"
+file_path = "algorithm_evaluation/F1/results/"
 create_and_save_plots_to_file(iterations_results, file_path, "F4")
 print(create_and_save_params_grid_as_latex_table(iterations_results, file_path, "F4"))

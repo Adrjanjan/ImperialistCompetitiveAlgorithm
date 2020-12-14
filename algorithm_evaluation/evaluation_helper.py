@@ -81,10 +81,11 @@ def gridsearch(function, params):
         try:
             ica.eval()
             metadata = ica.get_evaluation_data()
+            iterations_results.append((index, metadata))
             print(metadata)
             save_metadata_per_iteration(index, metadata, "results/metadata")
-            save_result(index, ica.result, "results/result")
-            iterations_results.append((index, metadata))
+            save_result(index, ica.result.numpy(), "results/result")
+            create_and_save_plots_to_file(iterations_results, "algorithm_evaluation/F1/results/" + str(index) + ".png", "")
         except tf.errors.InvalidArgumentError:
             continue
 
@@ -93,7 +94,17 @@ def gridsearch(function, params):
 
 def save_metadata_per_iteration(index, metadata, file_path):
     with open(file_path + str(index) + ".txt", "w") as text_file:
-        text_file.write(str(metadata))
+        text_file.write(str(index))
+        text_file.write(str(metadata["evaluation_time"]))
+        text_file.write(str(metadata["reached_minimum"]))
+        text_file.write(str(metadata["solution_error"]))
+        text_file.write(str(metadata["final_iteration"]))
+        text_file.write(str(metadata["max_iterations"]))
+        text_file.write(str(metadata["empires_number"]))
+        text_file.write(str(metadata["colonies_number"]))
+        text_file.write(str(metadata["direct_assimilation"]))
+        text_file.write(str(metadata["avg_colonies_power"]))
+        text_file.write(str(metadata["revolution_rate"]))
 
 
 def save_result(index, result, file_path):
