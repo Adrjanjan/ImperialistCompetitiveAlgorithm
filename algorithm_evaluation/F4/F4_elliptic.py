@@ -54,10 +54,10 @@ params = {
     "seed": [420]
 }
 
-iterations_results = gridsearch(F4_Elliptic(), params)
+result_path = "algorithm_evaluation/F1/results/"
+iterations_results = gridsearch(F4_Elliptic(), params, result_path)
 
 print(iterations_results)
 
-file_path = "algorithm_evaluation/F1/results/"
-create_and_save_plots_to_file(iterations_results, file_path, "F4")
-print(create_and_save_params_grid_as_latex_table(iterations_results, file_path, "F4"))
+create_and_save_plots_to_file(iterations_results, result_path, "F4")
+print(create_and_save_params_grid_as_latex_table(iterations_results, result_path, "F4"))

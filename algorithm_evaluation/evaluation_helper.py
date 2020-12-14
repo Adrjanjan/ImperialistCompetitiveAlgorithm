@@ -17,6 +17,7 @@ def create_and_save_plots_to_file(iterations_results, file_path, function_name):
         plt.yscale("log")
     plt.legend()
     plt.savefig(file_path + function_name + '.png', bbox_inches='tight')
+    plt.clf()
 
 
 def create_and_save_params_grid_as_latex_table(iterations_results, file_path, function_name):
@@ -62,7 +63,7 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
     return result
 
 
-def gridsearch(function, params):
+def gridsearch(function, params, results_path):
     param_grid = ParameterGrid(params)
     iterations_results = []
     for index, params in enumerate(param_grid):
@@ -83,9 +84,9 @@ def gridsearch(function, params):
             metadata = ica.get_evaluation_data()
             iterations_results.append((index, metadata))
             print(metadata)
-            save_metadata_per_iteration(index, metadata, "results/metadata")
-            save_result(index, ica.result.numpy(), "results/result")
-            create_and_save_plots_to_file(iterations_results, "algorithm_evaluation/F1/results/" + str(index) + ".png", "")
+            save_metadata_per_iteration(index, metadata, results_path)
+            save_result(index, ica.result.numpy(), results_path)
+            create_and_save_plots_to_file(iterations_results, results_path, str(index))
         except tf.errors.InvalidArgumentError:
             continue
 
@@ -93,7 +94,7 @@ def gridsearch(function, params):
 
 
 def save_metadata_per_iteration(index, metadata, file_path):
-    with open(file_path + str(index) + ".txt", "w") as text_file:
+    with open(file_path + "Metadata" + str(index) + ".txt", "w") as text_file:
         text_file.write(str(index))
         text_file.write(str(metadata["evaluation_time"]))
         text_file.write(str(metadata["reached_minimum"]))
@@ -108,5 +109,5 @@ def save_metadata_per_iteration(index, metadata, file_path):
 
 
 def save_result(index, result, file_path):
-    with open(file_path + str(index) + ".txt", "w") as text_file:
+    with open(file_path + "Result" + str(index) + ".txt", "w") as text_file:
         text_file.write(str(result))

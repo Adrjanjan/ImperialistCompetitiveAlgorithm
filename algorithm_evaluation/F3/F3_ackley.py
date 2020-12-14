@@ -5,7 +5,7 @@ from algorithm_evaluation.test_functions import CostFunction
 
 class F3_Ackley(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="resources/F3-xopt.txt"):
+    def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="algorithm_evaluation/F3/resources/F3-xopt.txt"):
         super().__init__(self.ackley, upper, lower, dimension, o_vector)
 
     @tf.function
@@ -28,10 +28,10 @@ params = {
     "seed": [420]
 }
 
-iterations_results = gridsearch(F3_Ackley(), params)
+result_path = "algorithm_evaluation/F3/results/"
+iterations_results = gridsearch(F3_Ackley(), params, result_path)
 
 print(iterations_results)
 
-file_path = "results/"
-create_and_save_plots_to_file(iterations_results, file_path, "F3")
-print(create_and_save_params_grid_as_latex_table(iterations_results, file_path, "F3"))
+create_and_save_plots_to_file(iterations_results, result_path, "F3")
+print(create_and_save_params_grid_as_latex_table(iterations_results, result_path, "F3"))

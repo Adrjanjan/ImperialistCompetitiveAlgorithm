@@ -5,7 +5,9 @@ from algorithm_evaluation.test_functions import CostFunction
 
 class F2_Rastrigin(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="resources/F2-xopt.txt"):
+    def __init__(self, upper=100, lower=-100, dimension=1000,
+                 o_vector="algorithm_evaluation/F2/resources/F2-xopt.txt"
+                 ):
         super().__init__(self.rastrigin, upper, lower, dimension, o_vector)
 
     @tf.function
@@ -28,10 +30,10 @@ params = {
     "seed": [420]
 }
 
-iterations_results = gridsearch(F2_Rastrigin(), params)
+results_path = "algorithm_evaluation/F2/results/"
+iterations_results = gridsearch(F2_Rastrigin(), params, results_path)
+create_and_save_plots_to_file(iterations_results, results_path, "F2")
+latex_table = create_and_save_params_grid_as_latex_table(iterations_results, results_path, "F2")
 
 print(iterations_results)
-
-file_path = "results/"
-create_and_save_plots_to_file(iterations_results, file_path, "F2")
-print(create_and_save_params_grid_as_latex_table(iterations_results, file_path, "F2"))
+print(latex_table)
