@@ -1,5 +1,6 @@
 import os
 
+import tensorflow as tf
 from ica.ica import ICA
 from sklearn.model_selection import ParameterGrid
 import matplotlib.pyplot as plt
@@ -22,10 +23,11 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
     sep = " & "
     endline = r"\\\hline" + "\n"
 
-    begin = r"\begin{tabular}{|c|c|c|c|c|c|c|}" + "\n" \
+    begin = r"\begin{tabular}{|c|c|c|c|c|c|c|c|}" + "\n" \
             + sep.join(["Nr. wykresu",
                         "Czas ewaluacji",
                         "Wartość osiągniętego minimum",
+                        "Błąd osiagniętego minimum",
                         "Ostatnia iteracja",
                         "Maksymalna liczba iteracji",
                         "Liczba imperiów",
@@ -43,6 +45,7 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
             str(index),
             str(params["evaluation_time"]),
             str(params["reached_minimum"]),
+            str(params["solution_error"]),
             str(params["final_iteration"]),
             str(params["max_iterations"]),
             str(params["empires_number"]),
@@ -75,12 +78,16 @@ def gridsearch(function, params):
                   close_empires_rating=params["close_empires_rating"],
                   seed=params["seed"]
                   )
-        ica.eval()
-        metadata = ica.get_evaluation_data()
-        print(metadata)
-        save_metadata_per_iteration(index, metadata, "results/metadata")
-        save_result(index, ica.result, "results/result")
-        iterations_results.append((index, metadata))
+        try:
+            ica.eval()
+            metadata = ica.get_evaluation_data()
+            print(metadata)
+            save_metadata_per_iteration(index, metadata, "results/metadata")
+            save_result(index, ica.result, "results/result")
+            iterations_results.append((index, metadata))
+        except tf.errors.InvalidArgumentError:
+            continue
+
     return iterations_results
 
 

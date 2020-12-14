@@ -152,4 +152,5 @@ class ICA:
             "revolution_rate": self.revolution_rate.numpy(),
             "lowest_cost_per_iteration": self.lowest_cost_per_iteration.stack(),
             # "close_empires_rating": self.close_empires_rating,
+            "solution_error": tf.reduce_sum(self.result - self.cost_function.o_vector).numpy(),
         }

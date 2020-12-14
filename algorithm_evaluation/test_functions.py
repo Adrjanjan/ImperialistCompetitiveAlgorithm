@@ -103,7 +103,7 @@ class CostFunction:
     @tf.function
     def elliptic_func(self, vector: tf.Tensor, start=None, end=None):
         base = tf.constant(1.0e6, tf.float64)
-        return tf.reduce_sum(tf.math.pow(base, self.powers[start:end:, ]) * tf.square(self.transform_osz(vector)))
+        return tf.reduce_sum(tf.math.pow(base, self.powers[start:end, ]) * tf.square(self.transform_osz(vector)))
 
     @tf.function
     def rotate_vector(self, vector, start, size):
