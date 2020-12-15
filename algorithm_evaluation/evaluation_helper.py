@@ -35,7 +35,10 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
                         "Liczba kolonii",
                         r"Bezpośrednia asymilacja - $\beta$",
                         "Współczynnik rewolucji",
-                        r"Współczynnik siły koloni $\xi$"]) \
+                        r"Współczynnik siły koloni $\xi$",
+                        "Średni błąd współrzędnych minimum",
+                        "Odległość minimum znalezionego od oczekiwanego"
+                        ]) \
             + endline
 
     middle = ""
@@ -53,7 +56,9 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
             str(params["colonies_number"]),
             str(params["direct_assimilation"]),
             str(params["avg_colonies_power"]),
-            str(params["revolution_rate"])
+            str(params["revolution_rate"]),
+            str(params["solution_error"]),
+            str(params["solution_distance"])
         ]) + endline
 
     end = r"\end{tabular}"
@@ -72,11 +77,9 @@ def gridsearch(function, params, results_path):
                   num_of_countries=params["num_of_countries"],
                   num_of_imperialist=params["num_of_imperialist"],
                   max_iterations=params["max_iterations"],
-                  deviation_assimilation=params["deviation_assimilation"],
                   direct_assimilation=params["direct_assimilation"],
                   avg_colonies_power=params["avg_colonies_power"],
                   revolution_rate=params["revolution_rate"],
-                  close_empires_rating=params["close_empires_rating"],
                   seed=params["seed"]
                   )
         try:
@@ -106,6 +109,8 @@ def save_metadata_per_iteration(index, metadata, file_path):
         text_file.write(str(metadata["direct_assimilation"]))
         text_file.write(str(metadata["avg_colonies_power"]))
         text_file.write(str(metadata["revolution_rate"]))
+        text_file.write(str(metadata["solution_error"]))
+        text_file.write(str(metadata["solution_distance"]))
 
 
 def save_result(index, result, file_path):

@@ -1,4 +1,3 @@
-import tensorflow as tf
 from algorithm_evaluation.evaluation_helper import *
 from algorithm_evaluation.test_functions import CostFunction
 
@@ -21,12 +20,10 @@ tf.config.run_functions_eagerly(True)
 params = {
     "num_of_countries": [500, 1000],
     "num_of_imperialist": [5, 10],
-    "max_iterations": [2000],
-    "deviation_assimilation": [3.14 / 4.0],
+    "max_iterations": [4000],
     "direct_assimilation": [0.2, 0.7],
     "avg_colonies_power": [0.1],
     "revolution_rate": [0.2, 0.5],
-    "close_empires_rating": [0.1],
     "seed": [420]
 }
 

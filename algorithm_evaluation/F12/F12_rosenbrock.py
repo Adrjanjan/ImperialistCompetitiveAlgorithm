@@ -5,7 +5,7 @@ from algorithm_evaluation.test_functions import CostFunction
 
 class F12_Rosenbrock(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="resources/F12-xopt.txt"):
+    def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="algorithm_evaluation/F12/resources/F12-xopt.txt"):
         super().__init__(self.rastrigin, upper, lower, dimension, o_vector)
 
     @tf.function
@@ -19,19 +19,17 @@ tf.config.run_functions_eagerly(True)
 params = {
     "num_of_countries": [500, 1000],
     "num_of_imperialist": [5, 10],
-    "max_iterations": [2000],
-    "deviation_assimilation": [3.14 / 4.0],
+    "max_iterations": [4000],
     "direct_assimilation": [0.2, 0.7],
     "avg_colonies_power": [0.1],
     "revolution_rate": [0.2, 0.5],
-    "close_empires_rating": [0.1],
     "seed": [420]
 }
 
-iterations_results = gridsearch(F12_Rosenbrock(), params)
+result_path = "algorithm_evaluation/F12/results/"
+iterations_results = gridsearch(F12_Rosenbrock(), params, result_path)
 
 print(iterations_results)
 
-file_path = "results/"
-create_and_save_plots_to_file(iterations_results, file_path, "F12")
-print(create_and_save_params_grid_as_latex_table(iterations_results, file_path, "F12"))
+create_and_save_plots_to_file(iterations_results, result_path, "F12")
+print(create_and_save_params_grid_as_latex_table(iterations_results, result_path, "F12"))

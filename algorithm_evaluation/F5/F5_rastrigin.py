@@ -36,26 +36,24 @@ class F5_Rastrigin(CostFunction):
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(
-            self.w[index] * self.rastrigin_func(self.rotate_vector(vector, start, self.s[index]), start,
-                                               start + self.s[index]))
+            self.w[index] * self.rastrigin_func(self.rotate_vector(vector, start, self.s[index])))
         return result, index + 1, start + self.s[index]
+
 
 tf.config.run_functions_eagerly(True)
 
 params = {
     "num_of_countries": [500, 1000],
     "num_of_imperialist": [5, 10],
-    "max_iterations": [10],
-    "deviation_assimilation": [3.14 / 4.0],
+    "max_iterations": [4000],
     "direct_assimilation": [0.2, 0.7],
     "avg_colonies_power": [0.1],
     "revolution_rate": [0.2, 0.5],
-    "close_empires_rating": [0.1],
     "seed": [420]
 }
 
 result_path = "algorithm_evaluation/F5/results/"
-iterations_results = gridsearch(F5_Rastrigin(), params)
+iterations_results = gridsearch(F5_Rastrigin(), params, result_path)
 
 print(iterations_results)
 

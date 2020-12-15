@@ -2,18 +2,19 @@ from algorithm_evaluation.evaluation_helper import *
 from algorithm_evaluation.test_functions import CostFunction
 
 
-class F11_Schwefel(CostFunction):
+class F13_Schwefel(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000,
-                 o_vector="algorithm_evaluation/F11/resources/F11-xopt.txt",
-                 p_vector="algorithm_evaluation/F11/resources/F11-p.txt",
-                 r_25="algorithm_evaluation/F11/resources/F11-R25.txt",
-                 r_50="algorithm_evaluation/F11/resources/F11-R50.txt",
-                 r_100="algorithm_evaluation/F11/resources/F11-R100.txt",
-                 s="algorithm_evaluation/F11/resources/F11-s.txt",
-                 w="algorithm_evaluation/F11/resources/F11-w.txt"):
+    def __init__(self, upper=100, lower=-100, dimension=905,
+                 o_vector="algorithm_evaluation/F13/resources/F13-xopt.txt",
+                 p_vector="algorithm_evaluation/F13/resources/F13-p.txt",
+                 r_25="algorithm_evaluation/F13/resources/F13-R25.txt",
+                 r_50="algorithm_evaluation/F13/resources/F13-R50.txt",
+                 r_100="algorithm_evaluation/F13/resources/F13-R100.txt",
+                 s="algorithm_evaluation/F13/resources/F13-s.txt",
+                 w="algorithm_evaluation/F13/resources/F13-w.txt"):
         super().__init__(self.schwefel, upper, lower, dimension, o_vector, p_vector, r_25, r_50, r_100, s, w)
         self.s_size = 20
+        self.overlap = 5
 
     @tf.function
     def schwefel(self, vector):
@@ -29,7 +30,7 @@ class F11_Schwefel(CostFunction):
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(
-            self.w[index] * self.schwefel_func(self.rotate_vector(vector, start, self.s[index])))
+            self.w[index] * self.schwefel_func(self.rotate_vector_conform(vector, start, self.s[index], index)))
         return result, start + self.s[index]
 
 
@@ -45,10 +46,10 @@ params = {
     "seed": [420]
 }
 
-result_path = "algorithm_evaluation/F11/results/"
-iterations_results = gridsearch(F11_Schwefel(), params, result_path)
+result_path = "algorithm_evaluation/F13/results/"
+iterations_results = gridsearch(F13_Schwefel(), params, result_path)
 
 print(iterations_results)
 
-create_and_save_plots_to_file(iterations_results, result_path, "F11")
-print(create_and_save_params_grid_as_latex_table(iterations_results, result_path, "F11"))
+create_and_save_plots_to_file(iterations_results, result_path, "F13")
+print(create_and_save_params_grid_as_latex_table(iterations_results, result_path, "F13"))
