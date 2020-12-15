@@ -90,9 +90,7 @@ class CostFunction:
 
     @tf.function
     def schwefel_func(self, vector: tf.Tensor):
-        a = tf.constant(418.9829, tf.float64)
-        sum1 = tf.reduce_sum(vector * tf.sin(tf.sqrt(tf.abs(vector))))
-        return a * self.dimension - sum1
+        return tf.reduce_sum(tf.square(tf.cumsum(vector)))
 
     @tf.function
     def rosenbrock_func(self, vector: tf.Tensor):
