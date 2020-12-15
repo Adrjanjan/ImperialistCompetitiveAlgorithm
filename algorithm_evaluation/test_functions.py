@@ -131,7 +131,7 @@ class CostFunction:
     def rotate_vector_conflict(self, vector, start, size, index):
         shift = index * self.overlap
         rotated = tf.expand_dims(tf.subtract(tf.gather(vector, self.p_vector[start - shift:start + size - shift]),
-                                             self.o_vector[start:start + size - shift])
+                                             self.o_vector[start-shift:start + size - shift])
                                  , axis=1)
         multiplied = tf.case([
             (tf.equal(size, 25), lambda: tf.matmul(self.r_25, rotated)),

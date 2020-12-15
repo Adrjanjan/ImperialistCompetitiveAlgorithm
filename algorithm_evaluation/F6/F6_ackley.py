@@ -31,7 +31,7 @@ class F6_Ackley(CostFunction):
         result, i, start = self.calculate_partial_rotation(i, result, start, z)
         result, i, start = self.calculate_partial_rotation(i, result, start, z)
         # 3
-        return result + tf.reduce_sum(self.ackley_func(tf.gather(z, self.p_vector[start:]), start, self.dimension))
+        return result + tf.reduce_sum(self.ackley_func(tf.gather(z, self.p_vector[start:])))
 
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):

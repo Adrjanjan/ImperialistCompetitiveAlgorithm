@@ -24,7 +24,7 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
     sep = " & "
     endline = r"\\\hline" + "\n"
 
-    begin = r"\begin{tabular}{|c|c|c|c|c|c|c|c|}" + "\n" \
+    begin = r"\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}" + "\n" \
             + sep.join(["Nr. wykresu",
                         "Czas ewaluacji",
                         "Wartość osiągniętego minimum",
@@ -36,7 +36,6 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
                         r"Bezpośrednia asymilacja - $\beta$",
                         "Współczynnik rewolucji",
                         r"Współczynnik siły koloni $\xi$",
-                        "Średni błąd współrzędnych minimum",
                         "Odległość minimum znalezionego od oczekiwanego"
                         ]) \
             + endline
@@ -57,7 +56,6 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
             str(params["direct_assimilation"]),
             str(params["avg_colonies_power"]),
             str(params["revolution_rate"]),
-            str(params["solution_error"]),
             str(params["solution_distance"])
         ]) + endline
 
@@ -109,7 +107,6 @@ def save_metadata_per_iteration(index, metadata, file_path):
         text_file.write(str(metadata["direct_assimilation"]))
         text_file.write(str(metadata["avg_colonies_power"]))
         text_file.write(str(metadata["revolution_rate"]))
-        text_file.write(str(metadata["solution_error"]))
         text_file.write(str(metadata["solution_distance"]))
 
 

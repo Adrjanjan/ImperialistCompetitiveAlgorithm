@@ -139,7 +139,9 @@ class ICA:
             "avg_colonies_power": self.avg_colonies_power.numpy(),
             "revolution_rate": self.revolution_rate.numpy(),
             "lowest_cost_per_iteration": self.lowest_cost_per_iteration.stack(),
-            "solution_error": tf.truediv(tf.abs(tf.reduce_sum(self.result - self.cost_function.o_vector)),
-                                         self.dimension).numpy(),
-            "solution_distance": tf.sqrt(tf.reduce_sum(tf.square(self.result - self.cost_function.o_vector))).numpy(),
+            "solution_error": tf.truediv(
+                tf.abs(tf.reduce_sum(self.result - self.cost_function.o_vector[:self.dimension])),
+                self.dimension).numpy(),
+            "solution_distance": tf.sqrt(
+                tf.reduce_sum(tf.square(self.result - self.cost_function.o_vector[:self.dimension]))).numpy(),
         }
