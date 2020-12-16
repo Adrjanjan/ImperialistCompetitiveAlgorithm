@@ -96,18 +96,18 @@ def gridsearch(function, params, results_path):
 
 def save_metadata_per_iteration(index, metadata, file_path):
     with open(file_path + "Metadata" + str(index) + ".txt", "w") as text_file:
-        text_file.write(str(index))
-        text_file.write(str(metadata["evaluation_time"]))
-        text_file.write(str(metadata["reached_minimum"]))
-        text_file.write(str(metadata["solution_error"]))
-        text_file.write(str(metadata["final_iteration"]))
-        text_file.write(str(metadata["max_iterations"]))
-        text_file.write(str(metadata["empires_number"]))
-        text_file.write(str(metadata["colonies_number"]))
-        text_file.write(str(metadata["direct_assimilation"]))
-        text_file.write(str(metadata["avg_colonies_power"]))
-        text_file.write(str(metadata["revolution_rate"]))
-        text_file.write(str(metadata["solution_distance"]))
+        ",".join([text_file.write(str(index)),
+                  text_file.write(str(metadata["evaluation_time"])),
+                  text_file.write(str(metadata["reached_minimum"])),
+                  text_file.write(str(metadata["solution_error"])),
+                  text_file.write(str(metadata["final_iteration"])),
+                  text_file.write(str(metadata["max_iterations"])),
+                  text_file.write(str(metadata["empires_number"])),
+                  text_file.write(str(metadata["colonies_number"])),
+                  text_file.write(str(metadata["direct_assimilation"])),
+                  text_file.write(str(metadata["avg_colonies_power"])),
+                  text_file.write(str(metadata["revolution_rate"])),
+                  text_file.write(str(metadata["solution_distance"]))])
 
 
 def save_result(index, result, file_path):

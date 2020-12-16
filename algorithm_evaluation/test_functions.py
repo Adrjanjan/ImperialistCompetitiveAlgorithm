@@ -64,10 +64,6 @@ class CostFunction:
         return tf.where(condition, tf.ones_like(x) * 7.9, tf.ones_like(x) * 3.1)
 
     @tf.function
-    def Lambda(self, x, alpha):
-        return x * tf.pow(alpha, 0.5 * self.powers)
-
-    @tf.function
     def transform_asy(self, x: tf.Tensor, beta):
         condition = tf.greater(x, constants.zero)
         asy = tf.pow(x, 1 + beta * self.powers * tf.sqrt(x))
