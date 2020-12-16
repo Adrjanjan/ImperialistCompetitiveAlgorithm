@@ -6,12 +6,12 @@ from algorithm_evaluation.test_functions import CostFunction
 class F12_Rosenbrock(CostFunction):
 
     def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="algorithm_evaluation/F12/resources/F12-xopt.txt"):
-        super().__init__(self.rastrigin, upper, lower, dimension, o_vector)
+        super().__init__(self.rosenbrock, upper, lower, dimension, o_vector)
 
     @tf.function
-    def rastrigin(self, matrix):
+    def rosenbrock(self, matrix):
         z = matrix - self.o_vector
-        return self.rosenbrock(z)
+        return self.rosenbrock_func(z)
 
 
 tf.config.run_functions_eagerly(True)

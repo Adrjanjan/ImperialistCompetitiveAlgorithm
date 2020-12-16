@@ -16,9 +16,9 @@ class F7_Schwefel(CostFunction):
         self.s_size = 7
 
     @tf.function
-    def schwefel(self, vector):
+    def schwefel(self, matrix):
         # 1
-        z = vector - self.o_vector
+        z = matrix - self.o_vector
         # 2
         result = 0
         i = 0
@@ -33,11 +33,13 @@ class F7_Schwefel(CostFunction):
         # 3
         return result + tf.reduce_sum(self.schwefel_func(tf.gather(z, self.p_vector[start:])))
 
+    # TODO remove it - use self.rotation_matrix
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(
             self.w[index] * self.schwefel_func(self.rotate_vector(vector, start, self.s[index])))
         return result, index + 1, start + self.s[index]
+
 
 tf.config.run_functions_eagerly(True)
 

@@ -16,9 +16,9 @@ class F8_Elliptic(CostFunction):
         self.s_size = 20
 
     @tf.function
-    def elliptic(self, vector):
+    def elliptic(self, matrix):
         # 1
-        z = vector - self.o_vector
+        z = matrix - self.o_vector
         # 2
         result = 0
         start = 0
@@ -26,6 +26,7 @@ class F8_Elliptic(CostFunction):
             result, start = self.calculate_partial_rotation(i, result, start, z)
         return result
 
+    # TODO remove it - use self.rotation_matrix
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(

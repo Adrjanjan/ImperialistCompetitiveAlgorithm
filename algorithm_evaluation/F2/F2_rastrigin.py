@@ -10,8 +10,8 @@ class F2_Rastrigin(CostFunction):
         super().__init__(self.rastrigin, upper, lower, dimension, o_vector)
 
     @tf.function
-    def rastrigin(self, vector):
-        z = vector - self.o_vector
+    def rastrigin(self, matrix):
+        z = matrix - self.o_vector
         return self.rastrigin_func(z)
 
 

@@ -16,9 +16,9 @@ class F5_Rastrigin(CostFunction):
         self.s_size = 7
 
     @tf.function
-    def rastrigin(self, vector):
+    def rastrigin(self, matrix):
         # 1
-        z = vector - self.o_vector
+        z = matrix - self.o_vector
         # 2
         result = 0
         i = 0
@@ -33,6 +33,7 @@ class F5_Rastrigin(CostFunction):
         # 3
         return result + tf.reduce_sum(self.rastrigin_func(tf.gather(z, self.p_vector[start:])))
 
+    # TODO remove it - use self.rotation_matrix
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(

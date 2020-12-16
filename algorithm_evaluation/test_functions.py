@@ -70,12 +70,12 @@ class CostFunction:
         return tf.where(condition, asy, x)
 
     @tf.function
-    def rastrigin(self, matrix: tf.Tensor):
+    def rastrigin_func(self, matrix: tf.Tensor):
         init = tf.constant(10.0, tf.float64) * self.dimension
         return init + tf.reduce_sum(tf.square(matrix) + tf.math.cos(constants.two_pi * matrix), axis=1)
 
     @tf.function
-    def ackley(self, matrix: tf.Tensor):
+    def ackley_func(self, matrix: tf.Tensor):
         a = tf.constant(20.0, tf.float64)
         b = tf.constant(0.2, tf.float64)
         c = tf.constant(constants.two_pi, tf.float64)
@@ -85,18 +85,18 @@ class CostFunction:
                tf.exp(tf.divide(sum2, self.dimension)) + a + constants.e
 
     @tf.function
-    def schwefel(self, matrix: tf.Tensor):
+    def schwefel_func(self, matrix: tf.Tensor):
         return tf.reduce_sum(tf.square(tf.cumsum(matrix, axis=1)), axis=1)
 
     @tf.function
-    def rosenbrock(self, matrix):
+    def rosenbrock_func(self, matrix):
         a = tf.constant(100.0, tf.float64)
         x_shift = matrix[:, 1:]
         x_cut = matrix[:, :-1]
         return tf.reduce_sum(a * tf.square(tf.square(x_cut) - x_shift) - tf.square(x_cut - 1), axis=1)
 
     @tf.function
-    def elliptic(self, matrix: tf.Tensor, start=None, end=None):
+    def elliptic_func(self, matrix: tf.Tensor, start=None, end=None):
         base = tf.constant(1.0e6, tf.float64)
         return tf.reduce_sum(tf.math.pow(base, self.powers[start:end, ]) * tf.square(self.transform_osz(matrix)),
                              axis=1)

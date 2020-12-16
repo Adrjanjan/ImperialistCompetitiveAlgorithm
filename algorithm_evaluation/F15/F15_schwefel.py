@@ -11,8 +11,8 @@ class F15_Schwefel(CostFunction):
         super().__init__(self.schwefel, upper, lower, dimension, o_vector)
 
     @tf.function
-    def schwefel(self, vector):
-        z = vector - self.o_vector
+    def schwefel(self, matrix):
+        z = matrix - self.o_vector
         return self.schwefel_func(z)
 
 

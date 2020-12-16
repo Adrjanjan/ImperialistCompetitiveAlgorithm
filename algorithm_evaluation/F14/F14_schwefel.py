@@ -17,14 +17,15 @@ class F14_Schwefel(CostFunction):
         self.overlap = 5
 
     @tf.function
-    def schwefel(self, vector):
+    def schwefel(self, matrix):
         # 2
         result = 0
         start = 0
         for i in range(self.s_size):
-            result, start = self.calculate_partial_rotation(i, result, start, vector)
+            result, start = self.calculate_partial_rotation(i, result, start, matrix)
         return result
 
+    # TODO remove it - use self.rotation_matrix
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(

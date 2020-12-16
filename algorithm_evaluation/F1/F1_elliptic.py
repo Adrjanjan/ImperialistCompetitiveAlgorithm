@@ -10,8 +10,8 @@ class F1_Elliptic(CostFunction):
         super().__init__(self.elliptic, upper, lower, dimension, o_vector)
 
     @tf.function
-    def elliptic(self, vector):
-        z = vector - self.o_vector
+    def elliptic(self, matrix):
+        z = matrix - self.o_vector
         return self.elliptic_func(z)
 
 

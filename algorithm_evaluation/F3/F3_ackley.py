@@ -8,8 +8,8 @@ class F3_Ackley(CostFunction):
         super().__init__(self.ackley, upper, lower, dimension, o_vector)
 
     @tf.function
-    def ackley(self, vector):
-        z = vector - self.o_vector
+    def ackley(self, matrix):
+        z = matrix - self.o_vector
         return self.ackley_func(z)
 
 

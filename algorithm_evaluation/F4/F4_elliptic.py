@@ -16,9 +16,9 @@ class F4_Elliptic(CostFunction):
         self.s_size = 7
 
     @tf.function
-    def elliptic(self, vector):
+    def elliptic(self, matrix):
         # 1
-        z = vector - self.o_vector
+        z = matrix - self.o_vector
         # 2
         result = 0
         i = 0
@@ -33,12 +33,14 @@ class F4_Elliptic(CostFunction):
         # 3
         return result + tf.reduce_sum(self.elliptic_func(tf.gather(z, self.p_vector[start:]), start, self.dimension))
 
+    # TODO remove it - use self.rotation_matrix
     @tf.function
-    def calculate_partial_rotation(self, index, result, start, vector):
+    def calculate_partial_rotation(self, index, result, start, matrix):
         result = result + tf.reduce_sum(
-            self.w[index] * self.elliptic_func(self.rotate_vector(vector, start, self.s[index]), start,
+            self.w[index] * self.elliptic_func(self.rotate_vector(matrix, start, self.s[index]), start,
                                                start + self.s[index]))
         return result, index + 1, start + self.s[index]
+
 
 tf.config.run_functions_eagerly(True)
 
