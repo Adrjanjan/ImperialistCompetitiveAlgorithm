@@ -70,35 +70,36 @@ class CostFunction:
         return tf.where(condition, asy, x)
 
     @tf.function
-    def rastrigin_func(self, vector: tf.Tensor):
+    def rastrigin(self, matrix: tf.Tensor):
         init = tf.constant(10.0, tf.float64) * self.dimension
-        return init + tf.reduce_sum(tf.square(vector) + tf.math.cos(constants.two_pi * vector))
+        return init + tf.reduce_sum(tf.square(matrix) + tf.math.cos(constants.two_pi * matrix), axis=1)
 
     @tf.function
-    def ackley_func(self, vector: tf.Tensor):
+    def ackley(self, matrix: tf.Tensor):
         a = tf.constant(20.0, tf.float64)
         b = tf.constant(0.2, tf.float64)
         c = tf.constant(constants.two_pi, tf.float64)
-        sum1 = tf.reduce_sum(tf.square(vector))
-        sum2 = tf.reduce_sum(tf.math.cos(tf.multiply(c, vector)))
+        sum1 = tf.reduce_sum(tf.square(matrix), axis=1)
+        sum2 = tf.reduce_sum(tf.math.cos(tf.multiply(c, matrix)), axis=1)
         return -a * tf.exp(-b * tf.sqrt(tf.truediv(sum1, self.dimension))) - \
                tf.exp(tf.divide(sum2, self.dimension)) + a + constants.e
 
     @tf.function
-    def schwefel_func(self, vector: tf.Tensor):
-        return tf.reduce_sum(tf.square(tf.cumsum(vector)))
+    def schwefel(self, matrix: tf.Tensor):
+        return tf.reduce_sum(tf.square(tf.cumsum(matrix, axis=1)), axis=1)
 
     @tf.function
-    def rosenbrock_func(self, vector: tf.Tensor):
+    def rosenbrock(self, matrix):
         a = tf.constant(100.0, tf.float64)
-        sum1 = a * tf.square(vector[1:] - tf.square(vector[:-1]))
-        sum2 = tf.square(vector[:-1] - constants.one)
-        return tf.reduce_sum(sum1 + sum2)
+        x_shift = matrix[:, 1:]
+        x_cut = matrix[:, :-1]
+        return tf.reduce_sum(a * tf.square(tf.square(x_cut) - x_shift) - tf.square(x_cut - 1), axis=1)
 
     @tf.function
-    def elliptic_func(self, vector: tf.Tensor, start=None, end=None):
+    def elliptic(self, matrix: tf.Tensor, start=None, end=None):
         base = tf.constant(1.0e6, tf.float64)
-        return tf.reduce_sum(tf.math.pow(base, self.powers[start:end, ]) * tf.square(self.transform_osz(vector)))
+        return tf.reduce_sum(tf.math.pow(base, self.powers[start:end, ]) * tf.square(self.transform_osz(matrix)),
+                             axis=1)
 
     @tf.function
     def rotate_vector(self, vector, start, size):
@@ -125,7 +126,7 @@ class CostFunction:
     def rotate_vector_conflict(self, vector, start, size, index):
         shift = index * self.overlap
         rotated = tf.expand_dims(tf.subtract(tf.gather(vector, self.p_vector[start - shift:start + size - shift]),
-                                             self.o_vector[start-shift:start + size - shift])
+                                             self.o_vector[start - shift:start + size - shift])
                                  , axis=1)
         multiplied = tf.case([
             (tf.equal(size, 25), lambda: tf.matmul(self.r_25, rotated)),

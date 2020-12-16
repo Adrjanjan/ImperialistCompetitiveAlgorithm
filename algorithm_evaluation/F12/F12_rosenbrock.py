@@ -9,9 +9,9 @@ class F12_Rosenbrock(CostFunction):
         super().__init__(self.rastrigin, upper, lower, dimension, o_vector)
 
     @tf.function
-    def rastrigin(self, vector):
-        z = vector - self.o_vector
-        return self.rosenbrock_func(z)
+    def rastrigin(self, matrix):
+        z = matrix - self.o_vector
+        return self.rosenbrock(z)
 
 
 tf.config.run_functions_eagerly(True)

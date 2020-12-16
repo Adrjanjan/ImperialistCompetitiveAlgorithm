@@ -130,7 +130,7 @@ class ICA:
     def get_evaluation_data(self):
         return {
             "evaluation_time": self.evaluation_time,
-            "reached_minimum": self.cost_function.function(self.result).numpy(),
+            "reached_minimum": self.cost_function.function(tf.expand_dims(self.result, 1)).numpy(),
             "final_iteration": self.final_iteration.numpy(),
             "max_iterations": self.max_iterations,
             "empires_number": self.num_of_imperialist.numpy(),
