@@ -49,11 +49,11 @@ def body_swap_strongest(iterator, empires_numbers_to_check, colonies, empires, e
     empire_not_exists = helpers.is_empty(current_empire_power)
     swapped_colonies, swapped_empires, swapped_empires_power, swapped_colonies_power = tf.cond(
         empire_not_exists,
-        lambda: (empires, colonies, empires_power, colonies_power),
+        lambda: (colonies, empires, empires_power, colonies_power),
         lambda: tf.cond(current_empire_power > best_colony_power,
                         lambda: swap(current_empire_number, colonies, colonies_indexes, empires, empires_numbers,
                                      colonies_power_with_index, empires_power, colonies_power, current_empire_power),
-                        lambda: (empires, colonies, empires_power, colonies_power)
+                        lambda: (colonies, empires, empires_power, colonies_power)
                         )
     )
 

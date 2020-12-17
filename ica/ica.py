@@ -1,6 +1,6 @@
 import timeit
 import tensorflow as tf
-from ica import init, assimillation, revolution, swap_strongest, competition, merging
+from ica import init, assimillation, revolution, swap_strongest, competition, helpers
 from algorithm_evaluation.test_functions import CostFunction
 import constants
 
@@ -26,6 +26,8 @@ class ICA:
         self.seed = seed
         self.final_iteration = None
         self.result = None
+        self.reached_minimum = None
+        self.top_empire_index = None
         self.lowest_cost_per_iteration = tf.TensorArray(tf.float64, size=0, dynamic_size=True, clear_after_read=False)
 
     @tf.function
@@ -44,7 +46,10 @@ class ICA:
 
         self.final_iteration, empires, _, _ = tf.while_loop(self.stop_condition, self.main_loop, loop_params)
 
-        self.result = empires[0]
+        empires_power = helpers.evaluate_countries_power(empires, self.cost_function.function)
+        self.reached_minimum, self.top_empire_index = tf.nn.top_k(-empires_power)
+        self.reached_minimum = -tf.squeeze(self.reached_minimum)
+        self.result = tf.gather(empires, self.top_empire_index)
         self.finish_benchmark()
         return self.result
 
@@ -130,7 +135,7 @@ class ICA:
     def get_evaluation_data(self):
         return {
             "evaluation_time": self.evaluation_time,
-            "reached_minimum": self.cost_function.function(tf.expand_dims(self.result, 1)).numpy(),
+            "reached_minimum": self.reached_minimum.numpy(),
             "final_iteration": self.final_iteration.numpy(),
             "max_iterations": self.max_iterations,
             "empires_number": self.num_of_imperialist.numpy(),
