@@ -1,6 +1,7 @@
 import unittest
 import tensorflow as tf
 from ica.ica import ICA
+from ica import helpers
 from algorithm_evaluation.test_functions import CostFunction
 from numpy.testing import assert_equal
 
@@ -97,7 +98,10 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0])
         # when
-        new_empires, new_colonies = ica.swap_strongest(empires, colonies, empires_numbers)
+        new_colonies, new_empires, _, _ = ica.swap_strongest(empires=empires,
+                                                             colonies=colonies,
+                                                             empires_numbers=empires_numbers
+                                                             )
         # then
         assert_equal(new_empires.numpy(), [[1., 1., ],
                                            [1., 1., ],
@@ -120,7 +124,10 @@ class MyTestCase(unittest.TestCase):
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0])
         # when
-        new_empires, new_colonies = ica.swap_strongest(empires, colonies, empires_numbers)
+        new_colonies, new_empires, _, _ = ica.swap_strongest(empires=empires,
+                                                             colonies=colonies,
+                                                             empires_numbers=empires_numbers
+                                                             )
         # then
         assert_equal(new_empires.numpy(), [[3., 3., ],
                                            [3., 3., ],
@@ -144,8 +151,17 @@ class MyTestCase(unittest.TestCase):
                                 [9., 9., ]
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 0, 0])
+
+        empires_power = helpers.evaluate_countries_power(empires, test_function.function)
+        colonies_power = helpers.evaluate_countries_power(colonies, test_function.function)
+
         # when
-        new_empires, new_empire_numbers, _ = ica.competition(empires, colonies, empires_numbers)
+        new_empires, new_empire_numbers, _, _, _ = ica.competition(empires=empires,
+                                                                   colonies=colonies,
+                                                                   empires_numbers=empires_numbers,
+                                                                   empires_power=empires_power,
+                                                                   colonies_power=colonies_power
+                                                                   )
         # then
         assert_equal(new_empire_numbers.numpy(), [1, 1, 0, 1])
         assert_equal(new_empires.numpy(), [[3., 3., ],
@@ -168,8 +184,15 @@ class MyTestCase(unittest.TestCase):
                                 [9., 9., ]
                                 ], tf.float64)
         empires_numbers = tf.constant([1, 1, 1, 1])
+        empires_power = helpers.evaluate_countries_power(empires, test_function.function)
+        colonies_power = helpers.evaluate_countries_power(colonies, test_function.function)
         # when
-        new_empires, new_empire_numbers, _ = ica.competition(empires, colonies, empires_numbers)
+        new_empires, new_empire_numbers, _, _, _ = ica.competition(empires=empires,
+                                                                   colonies=colonies,
+                                                                   empires_numbers=empires_numbers,
+                                                                   empires_power=empires_power,
+                                                                   colonies_power=colonies_power
+                                                                   )
         # then
         assert_equal(new_empire_numbers.numpy(), empires_numbers.numpy())
         assert_equal(new_empires.numpy(), empires.numpy())
