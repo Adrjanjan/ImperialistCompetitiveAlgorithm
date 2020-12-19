@@ -86,7 +86,7 @@ class ICA:
             empires_power=empires_power_swap,
             colonies_power=colonies_power_swap
         )
-        self.collect_data(index, empires_competition, colonies_swap, empires_numbers_competition, empires_power_competition)
+        self.collect_data(index, empires_power_competition)
         return tf.add(index, 1), colonies_swap, empires_competition, empires_numbers_competition
 
     @tf.function
@@ -150,7 +150,7 @@ class ICA:
             tf.print("| Colonies number: ", self.num_of_colonies)
             tf.print("| Evaluation time: ", self.evaluation_time)
 
-    def collect_data(self, index, empires, colonies, empires_numbers, empires_power):
+    def collect_data(self, index, empires_power):
         self.lowest_cost_per_iteration = self.lowest_cost_per_iteration.write(index, tf.reduce_min(empires_power))
 
     def get_evaluation_data(self):

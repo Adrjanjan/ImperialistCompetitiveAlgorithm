@@ -71,8 +71,9 @@ class CostFunction:
 
     @tf.function
     def rastrigin_func(self, matrix: tf.Tensor):
-        init = tf.constant(10.0, tf.float64) * self.dimension
-        return init + tf.reduce_sum(tf.square(matrix) + tf.math.cos(constants.two_pi * matrix), axis=1)
+        constant = tf.constant(10.0, tf.float64)
+        init = constant * self.dimension
+        return init + tf.reduce_sum(tf.square(matrix) - constant * tf.math.cos(constants.two_pi * matrix), axis=1)
 
     @tf.function
     def ackley_func(self, matrix: tf.Tensor):
