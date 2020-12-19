@@ -42,7 +42,7 @@ class ICA:
         self.start_benchmark()
         countries = self.initialize_countries()
         empires, colonies, empires_numbers = self.create_empires(countries)
-        loop_params = (constants.int_zero, empires, colonies, empires_numbers)
+        loop_params = (constants.int_zero, colonies, empires, empires_numbers)
 
         self.final_iteration, empires, _, _ = tf.while_loop(self.stop_condition, self.main_loop, loop_params)
 
@@ -72,43 +72,64 @@ class ICA:
                               )
 
     @tf.function
-    def main_loop(self, index, colonies, empires, empires_numbers):
-        colonies = self.assimilation(colonies, empires)
-        colonies = self.revolution(colonies)
-        colonies, empires, empires_power, colonies_power = self.swap_strongest(colonies, empires, empires_numbers)
-        empires, empires_numbers, empires_power, colonies_power, self.num_of_imperialist = self.competition(colonies,
-                                                                                                            empires,
-                                                                                                            empires_numbers,
-                                                                                                            empires_power,
-                                                                                                            colonies_power)
-        self.collect_data(index, empires, colonies, empires_numbers, empires_power)
-        return tf.add(index, 1), empires, colonies, empires_numbers
+    def main_loop(self, index, init_colonies, init_empires, init_empires_numbers):
+        colonies_assimilation = self.assimilation(colonies=init_colonies, empires=init_empires)
+        colonies_revolution = self.revolution(colonies=colonies_assimilation)
+        colonies_swap, empires_swap, empires_power_swap, colonies_power_swap = self.swap_strongest(
+            colonies=colonies_revolution,
+            empires=init_empires,
+            empires_numbers=init_empires_numbers
+        )
+        empires_competition, empires_numbers_competition, empires_power_competition, colonies_power_competition, self.num_of_imperialist = self.competition(
+            empires=empires_swap,
+            empires_numbers=init_empires_numbers,
+            empires_power=empires_power_swap,
+            colonies_power=colonies_power_swap
+        )
+        self.collect_data(index, empires_competition, colonies_swap, empires_numbers_competition, empires_power_competition)
+        return tf.add(index, 1), colonies_swap, empires_competition, empires_numbers_competition
 
     @tf.function
     def assimilation(self, colonies, empires):
-        return assimillation.assimilation(colonies=colonies, empires=empires, num_of_colonies=self.num_of_colonies,
-                                          dimension=self.dimension, lower=self.lower, upper=self.upper,
-                                          direct_assimilation=self.direct_assimilation)
+        return assimillation.assimilation(colonies=colonies,
+                                          empires=empires,
+                                          num_of_colonies=self.num_of_colonies,
+                                          dimension=self.dimension,
+                                          lower=self.lower,
+                                          upper=self.upper,
+                                          direct_assimilation=self.direct_assimilation
+                                          )
 
     @tf.function
     def revolution(self, colonies):
-        return revolution.revolution(colonies=colonies, num_of_colonies=self.num_of_colonies,
-                                     dimension=self.dimension, lower=self.lower, upper=self.upper,
-                                     revolution_rate=self.revolution_rate)
+        return revolution.revolution(colonies=colonies,
+                                     num_of_colonies=self.num_of_colonies,
+                                     dimension=self.dimension,
+                                     lower=self.lower,
+                                     upper=self.upper,
+                                     revolution_rate=self.revolution_rate
+                                     )
 
     @tf.function
     def swap_strongest(self, colonies, empires, empires_numbers):
-        return swap_strongest.swap_strongest(colonies=colonies, empires=empires, empires_numbers=empires_numbers,
+        return swap_strongest.swap_strongest(colonies=colonies,
+                                             empires=empires,
+                                             empires_numbers=empires_numbers,
                                              num_of_colonies=self.num_of_colonies,
-                                             cost_function=self.cost_function.function)
+                                             cost_function=self.cost_function.function
+                                             )
 
     @tf.function
-    def competition(self, colonies, empires, empires_numbers, empires_power, colonies_power):
-        return competition.competition(colonies=colonies, empires=empires, empires_numbers=empires_numbers,
-                                       num_of_colonies=self.num_of_colonies, num_of_imperialist=self.num_of_imperialist,
-                                       dimension=self.dimension, cost_function=self.cost_function.function,
-                                       avg_colonies_power=self.avg_colonies_power, empires_power=empires_power,
-                                       colonies_power=colonies_power)
+    def competition(self, empires, empires_numbers, empires_power, colonies_power):
+        return competition.competition(empires=empires,
+                                       empires_numbers=empires_numbers,
+                                       num_of_colonies=self.num_of_colonies,
+                                       num_of_imperialist=self.num_of_imperialist,
+                                       dimension=self.dimension,
+                                       avg_colonies_power=self.avg_colonies_power,
+                                       empires_power=empires_power,
+                                       colonies_power=colonies_power
+                                       )
 
     @tf.function
     def start_benchmark(self):

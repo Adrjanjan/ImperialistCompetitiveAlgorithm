@@ -75,8 +75,8 @@ def check_number_of_imperialist(empires_numbers, worst_empire_number, num_of_imp
 
 
 @tf.function
-def competition(colonies, empires, empires_numbers, num_of_colonies, num_of_imperialist, cost_function,
-                avg_colonies_power, dimension, empires_power, colonies_power):
+def competition(empires, empires_numbers, num_of_colonies, num_of_imperialist, avg_colonies_power, dimension,
+                empires_power, colonies_power):
     # calculate total power
     total_power = calculate_empires_total_power(empires_numbers, avg_colonies_power, num_of_colonies,
                                                 empires_power, colonies_power)
