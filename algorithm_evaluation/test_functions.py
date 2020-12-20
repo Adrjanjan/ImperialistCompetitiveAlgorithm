@@ -10,6 +10,7 @@ class CostFunction:
         self.lower = lower
         self.dimension = dimension
         self.powers = tf.range(0, self.dimension, dtype=tf.float64) / (self.dimension - 1)
+        self.base_powered = tf.math.pow(10e6, self.powers)
         self.s_size = None
         self.overlap = None
 
@@ -25,21 +26,22 @@ class CostFunction:
             self.r_100 = self.read_matrix(r_100, tf.float64)
         if s is not None:
             self.s = self.read_vector(s, tf.int32)
+            self.rotation_matrix = self.create_rotation_matrix()
         if w is not None:
             self.w = self.read_vector(w, tf.float64)
 
     @staticmethod
-    def read_vector(filename, type):
+    def read_vector(filename, elements_type):
         with open(filename, 'r') as file:
             lines = [float(f) for f in file.readlines()]
-            result = tf.cast(tf.constant(lines), type)
+            result = tf.cast(tf.constant(lines), elements_type)
             return result
 
     @staticmethod
-    def read_matrix(filename, type):
+    def read_matrix(filename, elements_type):
         with open(filename, 'r') as file:
             matrix = [[float(num) for num in line.split(',')] for line in file]
-            return tf.cast(tf.constant(matrix), type)
+            return tf.cast(tf.constant(matrix), elements_type)
 
     @tf.function
     def transform_osz(self, x: tf.Tensor):
@@ -79,11 +81,10 @@ class CostFunction:
     def ackley_func(self, matrix: tf.Tensor):
         a = tf.constant(20.0, tf.float64)
         b = tf.constant(0.2, tf.float64)
-        c = tf.constant(constants.two_pi, tf.float64)
         sum1 = tf.reduce_sum(tf.square(matrix), axis=1)
-        sum2 = tf.reduce_sum(tf.math.cos(tf.multiply(c, matrix)), axis=1)
+        sum2 = tf.reduce_sum(tf.math.cos(tf.multiply(constants.two_pi, matrix)), axis=1)
         return -a * tf.exp(-b * tf.sqrt(tf.truediv(sum1, self.dimension))) - \
-               tf.exp(tf.divide(sum2, self.dimension)) + a + constants.e
+               tf.exp(tf.truediv(sum2, self.dimension)) + a + constants.e
 
     @tf.function
     def schwefel_func(self, matrix: tf.Tensor):
@@ -94,17 +95,15 @@ class CostFunction:
         a = tf.constant(100.0, tf.float64)
         x_shift = matrix[:, 1:]
         x_cut = matrix[:, :-1]
-        return tf.reduce_sum(a * tf.square(tf.square(x_cut) - x_shift) - tf.square(x_cut - 1), axis=1)
+        return tf.reduce_sum(a * tf.square(tf.square(x_cut) - x_shift) + tf.square(x_cut - 1), axis=1)
 
     @tf.function
     def elliptic_func(self, matrix: tf.Tensor, start=None, end=None):
-        base = tf.constant(1.0e6, tf.float64)
-        return tf.reduce_sum(tf.math.pow(base, self.powers[start:end, ]) * tf.square(self.transform_osz(matrix)),
-                             axis=1)
+        return tf.reduce_sum(self.base_powered[start:end, ] * tf.square(self.transform_osz(matrix)), axis=1)
 
     @tf.function
     def rotate_vector(self, vector, start, size):
-        rotated = tf.expand_dims(tf.gather(vector, self.p_vector[start:start + size]), 1)
+        rotated = tf.gather(vector, self.p_vector[start:start + size])
         multiplied = tf.case([
             (tf.equal(size, 25), lambda: tf.matmul(self.r_25, rotated)),
             (tf.equal(size, 50), lambda: tf.matmul(self.r_50, rotated)),
@@ -135,3 +134,21 @@ class CostFunction:
             (tf.equal(size, 100), lambda: tf.matmul(self.r_100, rotated)),
         ])
         return tf.squeeze(multiplied)
+
+    @tf.function
+    def create_rotation_matrix(self):
+        operators = []
+        for x in self.s:
+            if x == 25:
+                operators.append(tf.linalg.LinearOperatorFullMatrix(self.r_25))
+            elif x == 50:
+                operators.append(tf.linalg.LinearOperatorFullMatrix(self.r_50))
+            else:
+                operators.append(tf.linalg.LinearOperatorFullMatrix(self.r_100))
+        s_sum = tf.reduce_sum(self.s)
+        if s_sum < self.dimension:
+            difference = self.dimension - s_sum
+            operators.append(tf.linalg.LinearOperatorFullMatrix(tf.eye(difference, difference, dtype=tf.float64)))
+
+        rotation_matrix = tf.linalg.LinearOperatorBlockDiag(operators)
+        return rotation_matrix

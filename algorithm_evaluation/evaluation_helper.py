@@ -84,7 +84,7 @@ def gridsearch(function, params, results_path):
             ica.eval()
             metadata = ica.get_evaluation_data()
             iterations_results.append((index, metadata))
-            print(metadata)
+            print(index, metadata, sep=" ")
             save_metadata_per_iteration(index, metadata, results_path)
             save_result(index, ica.result.numpy(), results_path)
             create_and_save_plots_to_file(iterations_results, results_path, str(index))

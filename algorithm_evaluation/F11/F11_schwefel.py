@@ -20,11 +20,8 @@ class F11_Schwefel(CostFunction):
         # 1
         z = matrix - self.o_vector
         # 2
-        result = 0
-        start = 0
-        for i in range(self.s_size):
-            result, start = self.calculate_partial_rotation(i, result, start, z)
-        return result
+        rotated = tf.transpose(self.rotation_matrix.matmul(tf.transpose(matrix)))
+        return self.schwefel_func(rotated)
 
     # TODO remove it - use self.rotation_matrix
     @tf.function
@@ -37,13 +34,13 @@ class F11_Schwefel(CostFunction):
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [500, 1000],
-    "num_of_imperialist": [5, 10],
-    "max_iterations": [4000],
-    "direct_assimilation": [0.2, 0.7],
+    "num_of_countries": [4000, 2000],
+    "num_of_imperialist": [10],
+    "max_iterations": [10000],
+    "direct_assimilation": [0.7, 1.1],
     "avg_colonies_power": [0.1],
-    "revolution_rate": [0.2, 0.5],
-    "seed": [420]
+    "revolution_rate": [0.0, 0.0001],
+    "seed": [None]
 }
 
 result_path = "algorithm_evaluation/F11/results/"

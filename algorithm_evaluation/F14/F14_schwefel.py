@@ -25,7 +25,6 @@ class F14_Schwefel(CostFunction):
             result, start = self.calculate_partial_rotation(i, result, start, matrix)
         return result
 
-    # TODO remove it - use self.rotation_matrix
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
         result = result + tf.reduce_sum(
@@ -36,13 +35,13 @@ class F14_Schwefel(CostFunction):
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [500, 1000],
-    "num_of_imperialist": [5, 10],
-    "max_iterations": [4000],
-    "direct_assimilation": [0.2, 0.7],
+    "num_of_countries": [4000, 2000],
+    "num_of_imperialist": [10],
+    "max_iterations": [10000],
+    "direct_assimilation": [0.7, 1.1],
     "avg_colonies_power": [0.1],
-    "revolution_rate": [0.2, 0.5],
-    "seed": [420]
+    "revolution_rate": [0.0, 0.0001],
+    "seed": [None]
 }
 
 result_path = "algorithm_evaluation/F14/results/"

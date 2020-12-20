@@ -20,37 +20,22 @@ class F5_Rastrigin(CostFunction):
         # 1
         z = matrix - self.o_vector
         # 2
-        result = 0
-        i = 0
-        start = 0
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        # 3
-        return result + tf.reduce_sum(self.rastrigin_func(tf.gather(z, self.p_vector[start:])))
+        rotated = tf.transpose(self.rotation_matrix.matmul(tf.transpose(matrix)))
 
-    # TODO remove it - use self.rotation_matrix
-    @tf.function
-    def calculate_partial_rotation(self, index, result, start, vector):
-        result = result + tf.reduce_sum(
-            self.w[index] * self.rastrigin_func(self.rotate_vector(vector, start, self.s[index])))
-        return result, index + 1, start + self.s[index]
+        # 3
+        return self.rastrigin_func(rotated)
 
 
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [500, 1000],
-    "num_of_imperialist": [5, 10],
-    "max_iterations": [4000],
-    "direct_assimilation": [0.2, 0.7],
+    "num_of_countries": [4000, 2000],
+    "num_of_imperialist": [10],
+    "max_iterations": [10000],
+    "direct_assimilation": [0.7, 1.1],
     "avg_colonies_power": [0.1],
-    "revolution_rate": [0.2, 0.5],
-    "seed": [420]
+    "revolution_rate": [0.0, 0.0001],
+    "seed": [None]
 }
 
 result_path = "algorithm_evaluation/F5/results/"

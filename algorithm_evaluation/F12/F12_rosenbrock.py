@@ -1,11 +1,12 @@
-import tensorflow as tf
 from algorithm_evaluation.evaluation_helper import *
 from algorithm_evaluation.test_functions import CostFunction
 
 
 class F12_Rosenbrock(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000, o_vector="algorithm_evaluation/F12/resources/F12-xopt.txt"):
+    def __init__(self, upper=100, lower=-100, dimension=1000,
+                 o_vector="algorithm_evaluation/F12/resources/F12-xopt.txt"
+                 ):
         super().__init__(self.rosenbrock, upper, lower, dimension, o_vector)
 
     @tf.function
@@ -17,13 +18,13 @@ class F12_Rosenbrock(CostFunction):
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [500, 1000],
-    "num_of_imperialist": [5, 10],
-    "max_iterations": [4000],
-    "direct_assimilation": [0.2, 0.7],
+    "num_of_countries": [4000, 2000],
+    "num_of_imperialist": [10],
+    "max_iterations": [10000],
+    "direct_assimilation": [0.7, 1.1],
     "avg_colonies_power": [0.1],
-    "revolution_rate": [0.2, 0.5],
-    "seed": [420]
+    "revolution_rate": [0.0, 0.0001],
+    "seed": [None]
 }
 
 result_path = "algorithm_evaluation/F12/results/"

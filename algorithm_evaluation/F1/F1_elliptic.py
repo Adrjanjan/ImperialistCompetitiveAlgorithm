@@ -18,13 +18,13 @@ class F1_Elliptic(CostFunction):
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [500, 1000],
-    "num_of_imperialist": [5, 10],
-    "max_iterations": [4000],
-    "direct_assimilation": [0.2, 0.7],
+    "num_of_countries": [4000, 2000],
+    "num_of_imperialist": [10],
+    "max_iterations": [10000],
+    "direct_assimilation": [0.7, 1.1],
     "avg_colonies_power": [0.1],
-    "revolution_rate": [0.2, 0.5],
-    "seed": [420]
+    "revolution_rate": [0.0, 0.0001],
+    "seed": [None]
 }
 file_path = "algorithm_evaluation/F1/results/"
 iterations_results = gridsearch(F1_Elliptic(), params, file_path)

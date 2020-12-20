@@ -20,38 +20,21 @@ class F4_Elliptic(CostFunction):
         # 1
         z = matrix - self.o_vector
         # 2
-        result = 0
-        i = 0
-        start = 0
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
-        result, i, start = self.calculate_partial_rotation(i, result, start, z)
+        rotated = tf.transpose(self.rotation_matrix.matmul(tf.transpose(matrix)))
         # 3
-        return result + tf.reduce_sum(self.elliptic_func(tf.gather(z, self.p_vector[start:]), start, self.dimension))
-
-    # TODO remove it - use self.rotation_matrix
-    @tf.function
-    def calculate_partial_rotation(self, index, result, start, matrix):
-        result = result + tf.reduce_sum(
-            self.w[index] * self.elliptic_func(self.rotate_vector(matrix, start, self.s[index]), start,
-                                               start + self.s[index]))
-        return result, index + 1, start + self.s[index]
+        return self.elliptic_func(rotated)
 
 
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [500, 1000],
-    "num_of_imperialist": [5, 10],
-    "max_iterations": [4000],
-    "direct_assimilation": [0.2, 0.7],
+    "num_of_countries": [2000],
+    "num_of_imperialist": [5],
+    "max_iterations": [5000],
+    "direct_assimilation": [0.2, 0.7, 1.1],
     "avg_colonies_power": [0.1],
     "revolution_rate": [0.2, 0.5],
-    "seed": [420]
+    "seed": [None]
 }
 
 result_path = "algorithm_evaluation/F1/results/"
