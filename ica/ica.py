@@ -170,4 +170,5 @@ class ICA:
                 self.dimension).numpy(),
             "solution_distance": tf.sqrt(
                 tf.reduce_sum(tf.square(self.result - self.cost_function.o_vector[:self.dimension]))).numpy(),
+            "dimension": self.dimension
         }

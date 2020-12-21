@@ -37,7 +37,7 @@ params = {
     "seed": [None]
 }
 
-result_path = "algorithm_evaluation/F1/results/"
+result_path = "algorithm_evaluation/F4/results/"
 iterations_results = gridsearch(F4_Elliptic(), params, result_path)
 
 print(iterations_results)

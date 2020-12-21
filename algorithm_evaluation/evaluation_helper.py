@@ -13,7 +13,7 @@ def create_and_save_plots_to_file(iterations_results, file_path, function_name):
         index, params = index_params
         y = params["lowest_cost_per_iteration"]
         x = range(len(y))
-        plt.plot(x, y, label=str(index))
+        plt.plot(x, y, label=str(index + 1))
         plt.yscale("log")
     plt.legend()
     plt.savefig(file_path + function_name + '.png', bbox_inches='tight')
@@ -29,6 +29,8 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
                         "Czas ewaluacji",
                         "Wartość osiągniętego minimum",
                         "Błąd osiagniętego minimum",
+                        "Odległość minimum znalezionego od oczekiwanego"
+                        "Wymiar"
                         "Ostatnia iteracja",
                         "Maksymalna liczba iteracji",
                         "Liczba imperiów",
@@ -36,7 +38,6 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
                         r"Bezpośrednia asymilacja - $\beta$",
                         "Współczynnik rewolucji",
                         r"Współczynnik siły koloni $\xi$",
-                        "Odległość minimum znalezionego od oczekiwanego"
                         ]) \
             + endline
 
@@ -45,10 +46,12 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
         index, params = index_params
 
         middle = middle + sep.join([
-            str(index),
+            str(index + 1),
             str(params["evaluation_time"]),
             str(params["reached_minimum"]),
             str(params["solution_error"]),
+            str(params["solution_distance"]),
+            str(params["dimension"]),
             str(params["final_iteration"]),
             str(params["max_iterations"]),
             str(params["empires_number"]),
@@ -56,7 +59,6 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
             str(params["direct_assimilation"]),
             str(params["avg_colonies_power"]),
             str(params["revolution_rate"]),
-            str(params["solution_distance"])
         ]) + endline
 
     end = r"\end{tabular}"
