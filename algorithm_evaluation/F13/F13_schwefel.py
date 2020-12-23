@@ -21,7 +21,7 @@ class F13_Schwefel(CostFunction):
         # 1
         z = matrix - self.o_vector
         # 2
-        result = 0
+        result = tf.zeros(matrix.shape[0], dtype=tf.float64)
         start = 0
         for i in range(self.s_size):
             result, start = self.calculate_partial_rotation(i, result, start, z)
@@ -29,8 +29,9 @@ class F13_Schwefel(CostFunction):
 
     @tf.function
     def calculate_partial_rotation(self, index, result, start, vector):
-        result = result + tf.reduce_sum(
-            self.w[index] * self.schwefel_func(self.rotate_vector_conform(vector, start, self.s[index], index)))
+        rotated = self.rotate_vector_conform(vector, start, self.s[index], index)
+        base_func_result = self.schwefel_func(rotated)
+        result = result + self.w[index] * base_func_result
         return result, start + self.s[index]
 
 

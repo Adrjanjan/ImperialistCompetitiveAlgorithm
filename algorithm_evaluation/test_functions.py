@@ -114,24 +114,24 @@ class CostFunction:
     @tf.function
     def rotate_vector_conform(self, vector, start, size, index):
         shift = index * self.overlap
-        rotated = tf.expand_dims(tf.gather(vector, self.p_vector[start - shift:start + size - shift]), 1)
+        rotated = tf.gather(vector, self.p_vector[start - shift:start + size - shift], axis=1)
         multiplied = tf.case([
-            (tf.equal(size, 25), lambda: tf.matmul(self.r_25, rotated)),
-            (tf.equal(size, 50), lambda: tf.matmul(self.r_50, rotated)),
-            (tf.equal(size, 100), lambda: tf.matmul(self.r_100, rotated)),
+            (tf.equal(size, 25), lambda: tf.linalg.matvec(self.r_25, rotated)),
+            (tf.equal(size, 50), lambda: tf.linalg.matvec(self.r_50, rotated)),
+            (tf.equal(size, 100), lambda: tf.linalg.matvec(self.r_100, rotated)),
         ])
         return tf.squeeze(multiplied)
 
     @tf.function
     def rotate_vector_conflict(self, vector, start, size, index):
         shift = index * self.overlap
-        rotated = tf.expand_dims(tf.subtract(tf.gather(vector, self.p_vector[start - shift:start + size - shift]),
-                                             self.o_vector[start - shift:start + size - shift])
-                                 , axis=1)
+        rotated = tf.subtract(tf.gather(vector, self.p_vector[start - shift:start + size - shift], axis=1),
+                              self.o_vector[start - shift:start + size - shift])
+
         multiplied = tf.case([
-            (tf.equal(size, 25), lambda: tf.matmul(self.r_25, rotated)),
-            (tf.equal(size, 50), lambda: tf.matmul(self.r_50, rotated)),
-            (tf.equal(size, 100), lambda: tf.matmul(self.r_100, rotated)),
+            (tf.equal(size, 25), lambda: tf.linalg.matvec(self.r_25, rotated)),
+            (tf.equal(size, 50), lambda: tf.linalg.matvec(self.r_50, rotated)),
+            (tf.equal(size, 100), lambda: tf.linalg.matvec(self.r_100, rotated)),
         ])
         return tf.squeeze(multiplied)
 

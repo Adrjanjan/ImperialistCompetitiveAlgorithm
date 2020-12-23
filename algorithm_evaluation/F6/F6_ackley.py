@@ -16,9 +16,9 @@ class F6_Ackley(CostFunction):
         self.s_size = 7
 
     @tf.function
-    def ackley(self, vector):
+    def ackley(self, matrix):
         # 1
-        z = vector - self.o_vector
+        z = matrix - self.o_vector
         # 2
         rotated = tf.transpose(self.rotation_matrix.matmul(tf.transpose(matrix)))
         # 3

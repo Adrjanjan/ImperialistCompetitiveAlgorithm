@@ -29,8 +29,8 @@ def create_and_save_params_grid_as_latex_table(iterations_results, file_path, fu
                         "Czas ewaluacji",
                         "Wartość osiągniętego minimum",
                         "Błąd osiagniętego minimum",
-                        "Odległość minimum znalezionego od oczekiwanego"
-                        "Wymiar"
+                        "Odległość minimum znalezionego od oczekiwanego",
+                        "Wymiar",
                         "Ostatnia iteracja",
                         "Maksymalna liczba iteracji",
                         "Liczba imperiów",
@@ -82,16 +82,16 @@ def gridsearch(function, params, results_path):
                   revolution_rate=params["revolution_rate"],
                   seed=params["seed"]
                   )
-        try:
-            ica.eval()
-            metadata = ica.get_evaluation_data()
-            iterations_results.append((index, metadata))
-            print(index, metadata, sep=" ")
-            save_metadata_per_iteration(index, metadata, results_path)
-            save_result(index, ica.result.numpy(), results_path)
-            create_and_save_plots_to_file(iterations_results, results_path, str(index))
-        except tf.errors.InvalidArgumentError:
-            continue
+        # try:
+        ica.eval()
+        metadata = ica.get_evaluation_data()
+        iterations_results.append((index, metadata))
+        print(index, metadata, sep=" ")
+        save_metadata_per_iteration(index, metadata, results_path)
+        save_result(index, ica.result.numpy(), results_path)
+        create_and_save_plots_to_file(iterations_results, results_path, str(index))
+        # except tf.errors.InvalidArgumentError:
+        #     print()
 
     return iterations_results
 
