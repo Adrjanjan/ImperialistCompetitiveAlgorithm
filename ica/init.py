@@ -9,23 +9,6 @@ def initialize_countries(num_of_countries, dimension, lower, upper):
 
 
 @tf.function
-def add_one_to_top_empire(num_of_colonies_per_empire, num_of_colonies):
-    more = tf.greater(tf.reduce_sum(num_of_colonies_per_empire), num_of_colonies)
-    less = tf.less(tf.reduce_sum(num_of_colonies_per_empire), num_of_colonies)
-    return tf.cond(
-        less,
-        lambda: tf.concat(
-            [tf.expand_dims(tf.add(num_of_colonies_per_empire[0], 1), 0), num_of_colonies_per_empire[1:]], 0),
-        lambda: tf.cond(
-            more,
-            lambda: tf.concat(
-                [tf.expand_dims(tf.subtract(num_of_colonies_per_empire[0], 1), 0), num_of_colonies_per_empire[1:]], 0),
-            lambda: num_of_colonies_per_empire
-        )
-    )
-
-
-@tf.function
 def calculate_number_of_colonies(top_powers, num_of_colonies):
     max_cost = tf.reduce_max(top_powers[:])
     x1 = tf.constant(1.3, dtype=tf.float64)
@@ -35,7 +18,16 @@ def calculate_number_of_colonies(top_powers, num_of_colonies):
     num_of_colonies_per_empire = tf.round(
         tf.multiply(tf.truediv(normalised_cost, tf.reduce_sum(normalised_cost)), num_of_colonies))
 
-    return tf.cast(add_one_to_top_empire(num_of_colonies_per_empire, num_of_colonies), tf.int32)
+    sum_of_created = tf.cast(tf.reduce_sum(num_of_colonies_per_empire), tf.int32)
+    num_of_colonies_per_empire = tf.cond(
+        tf.greater(sum_of_created, num_of_colonies),
+        lambda: tf.concat([num_of_colonies_per_empire[:num_of_colonies - sum_of_created],
+                           num_of_colonies_per_empire[num_of_colonies - sum_of_created:] - 1.0], axis=0),
+        lambda: tf.concat([num_of_colonies_per_empire[:num_of_colonies - sum_of_created] + 1.0,
+                           num_of_colonies_per_empire[num_of_colonies - sum_of_created:]], axis=0)
+    )
+
+    return tf.cast(num_of_colonies_per_empire, tf.int32)
 
 
 @tf.function

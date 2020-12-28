@@ -82,7 +82,6 @@ def gridsearch(function, params, results_path):
                   revolution_rate=params["revolution_rate"],
                   seed=params["seed"]
                   )
-        # try:
         ica.eval()
         metadata = ica.get_evaluation_data()
         iterations_results.append((index, metadata))
@@ -90,8 +89,6 @@ def gridsearch(function, params, results_path):
         save_metadata_per_iteration(index, metadata, results_path)
         save_result(index, ica.result.numpy(), results_path)
         create_and_save_plots_to_file(iterations_results, results_path, str(index))
-        # except tf.errors.InvalidArgumentError:
-        #     print()
 
     return iterations_results
 
