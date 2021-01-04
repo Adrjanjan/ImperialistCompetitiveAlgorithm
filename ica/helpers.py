@@ -32,11 +32,6 @@ def evaluate_countries_power(countries, cost_function):
 
 
 @tf.function
-def broadcast_boolean_mask(bool_vector, shape):
-    return tf.reshape(tf.repeat(bool_vector, shape[1]), shape)
-
-
-@tf.function
 def create_index_column(tensor):
     return tf.cast(tf.range(tensor.shape[0])[:, None], tf.int32)
 
@@ -79,7 +74,7 @@ def get_first_by_empire_number(empire_number, tensor, empires_numbers):
 
 @tf.function
 def broadcast_boolean_mask(bool_vector, shape):
-    return tf.reshape(tf.repeat(bool_vector, shape[1]), shape)
+    return tf.expand_dims(bool_vector, 1)
 
 
 @tf.function

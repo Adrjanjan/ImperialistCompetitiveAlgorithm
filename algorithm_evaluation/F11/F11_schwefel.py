@@ -23,14 +23,6 @@ class F11_Schwefel(CostFunction):
         rotated = tf.transpose(self.rotation_matrix.matmul(tf.transpose(matrix)))
         return self.schwefel_func(rotated)
 
-    # TODO remove it - use self.rotation_matrix
-    @tf.function
-    def calculate_partial_rotation(self, index, result, start, vector):
-        result = result + tf.reduce_sum(
-            self.w[index] * self.schwefel_func(self.rotate_vector(vector, start, self.s[index])))
-        return result, start + self.s[index]
-
-
 tf.config.run_functions_eagerly(True)
 
 params = {

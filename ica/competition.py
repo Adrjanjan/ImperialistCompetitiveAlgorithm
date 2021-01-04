@@ -42,10 +42,8 @@ def evaluate_empire_power(index, total_power, empires_power, colonies_power, avg
         helpers.get_all_by_empire_number(empire_number, colonies_power, empires_numbers))
     empire_power = helpers.get_first_by_empire_number(empire_number, empires_power, empires_numbers)
     empire_total_power = tf.add(empire_power, tf.multiply(avg_colonies_power, empire_colonies_power_sum))
-    new_total_power = helpers.broadcastable_where(tf.equal(empires_numbers, empire_number),
-                                                  tf.reshape(empire_total_power, [-1]),
-                                                  total_power
-                                                  )
+    new_total_power = tf.where(tf.equal(empires_numbers, empire_number), empire_total_power, total_power)
+
     return tf.subtract(index, 1), new_total_power, empires_power, colonies_power, avg_colonies_power, empire_numbers, \
            empires_numbers
 
@@ -55,11 +53,10 @@ def calculate_empires_total_power(empires_numbers, avg_colonies_power,
                                   num_of_colonies, empires_power, colonies_power):
     empire_numbers, _ = tf.unique(empires_numbers)
 
-    initial_params = (tf.subtract(tf.size(empire_numbers), 1), tf.ones([num_of_colonies, 1], dtype=tf.float64),
+    initial_params = (tf.subtract(tf.size(empire_numbers), 1), tf.ones([num_of_colonies], dtype=tf.float64),
                       empires_power, colonies_power, avg_colonies_power, empire_numbers, empires_numbers)
     _, total_cost, _, _, _, _, _ = tf.while_loop(condition_evaluate_total_power, evaluate_empire_power, initial_params)
 
-    total_cost = tf.squeeze(total_cost)
     normalised_total_cost = tf.subtract(tf.reduce_max(total_cost), total_cost)
     total_power = tf.abs(tf.truediv(normalised_total_cost, tf.reduce_sum(normalised_total_cost)))
     return total_power

@@ -22,12 +22,8 @@ def swap(current_empire_number, colonies, colonies_indexes, empires, empires_num
     new_c = helpers.broadcastable_where(tf.equal(colonies_indexes, best_colony_real_index), current_empire,
                                         colonies)
 
-    new_e_power = tf.squeeze(
-        helpers.broadcastable_where(tf.equal(empires_numbers, current_empire_number), best_colony_power,
-                                    tf.expand_dims(empires_power, axis=1)))
-    new_c_power = tf.squeeze(
-        helpers.broadcastable_where(tf.equal(colonies_indexes, best_colony_real_index), current_empire_power,
-                                    tf.expand_dims(colonies_power, axis=1)))
+    new_e_power = tf.where(tf.equal(empires_numbers, current_empire_number), best_colony_power, empires_power)
+    new_c_power = tf.where(tf.equal(colonies_indexes, best_colony_real_index), current_empire_power, colonies_power)
 
     return new_c, new_e, new_e_power, new_c_power
 
@@ -70,7 +66,7 @@ def swap_strongest(colonies, empires, empires_numbers, num_of_colonies, cost_fun
     empires_power = helpers.evaluate_countries_power(empires, cost_function)
     empires_numbers_to_check, _ = tf.unique(empires_numbers)
     swap_initial_params = (constants.int_zero, empires_numbers_to_check, colonies, empires, empires_numbers,
-                           empires_power, colonies_power, colonies_indexes, colonies_power_with_index)
+                           empires_power, colonies_power, tf.squeeze(colonies_indexes), colonies_power_with_index)
 
     _, _, new_colonies, new_empires, _, new_empires_power, new_colonies_power, _, _ = tf.while_loop(
         condition_swap_strongest, body_swap_strongest,

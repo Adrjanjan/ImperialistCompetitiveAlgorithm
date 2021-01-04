@@ -28,12 +28,12 @@ class F4_Elliptic(CostFunction):
 tf.config.run_functions_eagerly(True)
 
 params = {
-    "num_of_countries": [2000],
-    "num_of_imperialist": [5],
-    "max_iterations": [5000],
-    "direct_assimilation": [0.2, 0.7, 1.1],
+    "num_of_countries": [4000, 2000],
+    "num_of_imperialist": [10],
+    "max_iterations": [10000],
+    "direct_assimilation": [0.7, 1.1],
     "avg_colonies_power": [0.1],
-    "revolution_rate": [0.2, 0.5],
+    "revolution_rate": [0.0, 0.0001],
     "seed": [None]
 }
 
