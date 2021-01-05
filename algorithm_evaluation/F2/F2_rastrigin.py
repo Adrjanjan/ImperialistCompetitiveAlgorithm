@@ -4,7 +4,7 @@ from algorithm_evaluation.test_functions import CostFunction
 
 class F2_Rastrigin(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000,
+    def __init__(self, upper=5, lower=-5, dimension=1000,
                  o_vector="algorithm_evaluation/F2/resources/F2-xopt.txt"
                  ):
         super().__init__(self.rastrigin, upper, lower, dimension, o_vector)

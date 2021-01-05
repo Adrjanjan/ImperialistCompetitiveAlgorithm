@@ -4,7 +4,7 @@ from algorithm_evaluation.test_functions import CostFunction
 
 class F3_Ackley(CostFunction):
 
-    def __init__(self, upper=100, lower=-100, dimension=1000,
+    def __init__(self, upper=32, lower=-32, dimension=1000,
                  o_vector="algorithm_evaluation/F3/resources/F3-xopt.txt"
                  ):
         super().__init__(self.ackley, upper, lower, dimension, o_vector)
